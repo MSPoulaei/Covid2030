@@ -177,6 +177,7 @@ public:
 	{}
 	~User(){}
 };
+
 const int User::max_user_pass_length=20;
 const int User::min_user_pass_length=4;
 
@@ -210,9 +211,6 @@ int main() {
 		<< "3 - Options\n"
 		<< "4 - Credits\n"
 		<< "5 - Exit" << endl;
-
-	
-
 	cin >> main_menu;
 	while (true) {
 
@@ -229,9 +227,9 @@ int main() {
 			char_to_lower(key);
 			round_num++;
 			//first_run = false;
-			enum keys { mv_UP,mv_DOWN,mv_RIGHT,mv_LEFT,
-						sh_UP, sh_DOWN, sh_RIGHT, sh_LEFT,
-						RELOAD_key,EXIT_key,UPGRADE_key,MENU_key};
+			enum keys { MV_UP,MV_DOWN,MV_RIGHT,MV_LEFT,
+						SH_UP, SH_DOWN, SH_RIGHT, SH_LEFT,
+						RELOAD_KEY,EXIT_KEY,UPGRADE_KEY,MENU_KEY};
 			switch (key) {
 			case 'w': case 'a': case 's': case 'd':
 				Player.get_coordinate().move(key, HEIGHT, WIDTH);//player
