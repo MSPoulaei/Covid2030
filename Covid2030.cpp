@@ -32,11 +32,12 @@
 //#include <unistd.h>
 //#include <termios.h>
 using namespace std;
-bool just_play = false;
+bool just_play = false, is_exit = false, mute = false;
 int WIDTH = 15, HEIGHT = 15, END_LEVEL = 15;
 int level = 1, health = 3, ammo = 0, charged = 3,
 vaccine = 0, kill = 0, range_gun = 5, credit = 0,
 round_num = 0, magazine_capacity = 3;
+//char keys_chars[12] = { 'w','a','s','d','t','f','g','h','r','e','u','m'};
 //char getch() {
 //    char buf = 0;
 //    struct termios old = { 0 };
@@ -56,7 +57,16 @@ round_num = 0, magazine_capacity = 3;
 //        perror("tcsetattr ~ICANON");
 //    return (buf);
 //}
-
+bool file_exist(string path) {
+	bool exist;
+	ifstream inFile(path, ios::in);
+	if (!inFile)
+		exist = false;
+	else
+		exist = true;
+	inFile.close();
+	return exist;
+}
 template<typename T>
 class Array {
 private:
@@ -90,6 +100,10 @@ public:
 	}
 	T& operator[](const int& index) {
 		return arr[index];
+	}
+	void operator=(const T& v) {
+		this->size_num = v.size_num;
+		this->arr = v.arr;
 	}
 	int begin() { return 0; }
 	int end() { return size_num - 1; }
@@ -170,26 +184,52 @@ public:
 private:
 	Item* ptr;
 };
+
+static Item_Interface Player(PLAYER_CHAR, 0, 0);
+static Item_Interface Door(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
+Array<Item_Interface> Item_Interface::Zombies;
+Array<Item_Interface> Item_Interface::Vaccines;
+Array<Item_Interface> Item_Interface::Ammunition;
+
 class User {
+	//friend string Login_user_name();
 private:
 	string user_name;
 	string password;
 	string file_path;
-	int level, health, ammo, charged, vaccine,
-		kill, range_gun, credit, round_num, magazine_capacity;
+	int _level, _health, _ammo, _charged, _vaccine,
+		_kill, _range_gun, _credit, _round_num, _magazine_capacity;
+	//char keys[12];
 	static const int max_user_pass_length;
 	static const int min_user_pass_length;
+	Item_Interface _Player;
+	Item_Interface _Door;
+	Array<Item_Interface> _Zombies;
+	Array<Item_Interface> _Vaccines;
+	Array<Item_Interface> _Ammunition;
 	void reset_values() {
-		level = 1;
-		vaccine = 0;
-		health = 3;
-		ammo = 0;
-		charged = 3;
-		kill = 0;
-		range_gun = 5;
-		credit = 0;
-		round_num = 0;
-		magazine_capacity = 3;
+		_level = 1;
+		_vaccine = 0;
+		_health = 3;
+		_ammo = 0;
+		_charged = 3;
+		_kill = 0;
+		_range_gun = 5;
+		_credit = 0;
+		_round_num = 0;
+		_magazine_capacity = 3;
+		/*keys[0] = 'w';
+		keys[1] = 'a';
+		keys[2] = 's';
+		keys[3] = 'd';
+		keys[4] = 't';
+		keys[5] = 'f';
+		keys[6] = 'g';
+		keys[7] = 'h';
+		keys[8] = 'r';
+		keys[9] = 'e';
+		keys[10] = 'u';
+		keys[11] = 'm';*/
 	}
 	static bool string_check_numeric(string text) {
 		for (int i = 0; i < text.length(); i++)
@@ -198,20 +238,26 @@ private:
 		return true;
 	}
 	static bool check_user_name(string user_name) {
+		if (user_name.length() > max_user_pass_length || user_name.length() < min_user_pass_length)
+			return false;
 		for (int i = 0; i < user_name.length(); i++)
 			if (!(
 				(user_name[i] >= 'a' && user_name[i] <= 'z') ||
 				(user_name[i] >= 'A' && user_name[i] <= 'Z') ||
-				(user_name[i] >= '0' && user_name[i] <= '9') 
-				)){ 
+				(user_name[i] >= '0' && user_name[i] <= '9')
+				)) {
 				cout << "invalid input! try again:" << endl;
 				return false;
 			}
 		return true;
 	};
 	static bool check_password(string password) {
-		if (string_check_numeric(password))
+		if (password.length() > max_user_pass_length || password.length() < min_user_pass_length)
 			return false;
+		if (string_check_numeric(password)) {
+			cout << "password should't contain only numbers!" << endl;
+			return false;
+		}
 		for (int i = 0; i < password.length(); i++)
 			if (!(
 				(password[i] >= 'a' && password[i] <= 'z') ||
@@ -220,51 +266,143 @@ private:
 				(password[i] >= '#' && password[i] <= '&') ||
 				(password[i] >= '(' && password[i] <= '-') ||
 				(password[i] >= '^' && password[i] <= '_') ||
-				(password[i] == '=') 
+				(password[i] == '=')
 				)) {
 				cout << "invalid input! try again:" << endl;
 				return false;
 			}
 		return true;
 	};
+	void Save_file() {
+		ofstream user_file(file_path, ios::binary);
+		user_file.write(reinterpret_cast<const char*>(&(*this)), sizeof((*this)));
+		user_file.close();
+	}
 public:
 	User() {}
 	~User() {}
-	void Sign_up() {
+	bool Sign_up() {
 		cout << "(notes: username or password should contain at least " << min_user_pass_length
-			 << " and at most" << max_user_pass_length
-			 << "characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
-			 << "legal chars for password {a-z,A-Z,0-9,@#$%^&*()_+=-,} space is illegal and it should't contain only numbers)" << endl;
+			<< " and at most" << max_user_pass_length
+			<< "characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
+			<< "legal chars for password {a-z,A-Z,0-9,@#$%^&*()_+=-,} space is illegal and it should't contain only numbers)" << endl;
 		cout << "Enter your User Name:" << endl;
 		do {
 			cin >> user_name;
 		} while (!check_user_name(user_name));
+		file_path = "Assets/users/" + user_name + ".bin";
+		if (file_exist(file_path)) {
+			cout << "User with the same user name found! please log in" << endl;
+			return false;
+		}
+		cout << "Enter your password:" << endl;
 		do {
 			cin >> password;
 		} while (!check_password(password));
-		reset_values();
-		cout << "User with username:"<<user_name<<" and password:"<<password<<" has been registered successfully" << endl;
+		//reset_values();
+		Save();
+		cout << "User with username:" << user_name << " and password:" << password << " has been registered successfully" << endl;
+		return true;
+	}
+	bool Login() {
+		string password;
+		cout << "(notes: username or password should contain at least " << User::min_user_pass_length
+			<< " and at most" << User::max_user_pass_length
+			<< "characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
+			<< "legal chars for password {a-z,A-Z,0-9,@#$%^&*()_+=-,} space is illegal and it should't contain only numbers)" << endl;
+		cout << "Enter your User Name:" << endl;
+		do {
+			cin >> user_name;
+		} while (!User::check_user_name(user_name));
 		file_path = "Assets/users/" + user_name + ".bin";
-	}
-	void Login() {
+		if (!file_exist(file_path)) {
+			cout << "User name not found! please sign up!" << endl;
+			return false;
+		}
 
+		ifstream user_file(file_path, ios::in);
+		user_file.read(reinterpret_cast<char*>(&(*this)), sizeof((*this)));
+		user_file.close();
+
+
+		cout << "Enter your password:" << endl;
+		do {
+			cin >> password;
+		} while (!check_password(password));
+		if (password == this->password) {
+			cout << "password is correct" << endl
+				<< "All your data is loaded!" << endl;
+			Load();
+			return true;
+		}
+		else
+			cout << "password is incorrect" << endl;
+		return false;
 	}
-	Item_Interface Player;
-	Item_Interface Door;
-	Array<Item_Interface> Zombies;
-	Array<Item_Interface> Vaccines;
-	Array<Item_Interface> Ammunition;
+	void Load() {
+		level = _level;
+		health = _health;
+		ammo = _ammo;
+		charged = _charged;
+		vaccine = _vaccine;
+		kill = _kill;
+		range_gun = _range_gun;
+		credit = _credit;
+		round_num = _round_num;
+		magazine_capacity = _magazine_capacity;
+
+		Player = _Player;
+		Door = _Door;
+		Item_Interface::Zombies = _Zombies;
+		Item_Interface::Vaccines = _Vaccines;
+		Item_Interface::Ammunition = _Ammunition;
+	}
+	void Save() {
+		_level = level;
+		_health = health;
+		_ammo = ammo;
+		_charged = charged;
+		_vaccine = vaccine;
+		_kill = kill;
+		_range_gun = range_gun;
+		_credit = credit;
+		_round_num = round_num;
+		_magazine_capacity = magazine_capacity;
+
+		_Player = Player;
+		_Door = Door;
+		_Zombies = Item_Interface::Zombies;
+		_Vaccines = Item_Interface::Vaccines;
+		_Ammunition = Item_Interface::Ammunition;
+		Save_file();
+	}
+
 };
 
 const int User::max_user_pass_length = 20;
 const int User::min_user_pass_length = 4;
+User user;
 
-static Item_Interface Player(PLAYER_CHAR, 0, 0);
-static Item_Interface Door(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
-Array<Item_Interface> Item_Interface::Zombies;
-Array<Item_Interface> Item_Interface::Vaccines;
-Array<Item_Interface> Item_Interface::Ammunition;
 
+//string Login_user_name() {
+//	string user_name;
+//	cout << "(notes: username or password should contain at least " << User::min_user_pass_length
+//		<< " and at most" << User::max_user_pass_length
+//		<< "characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
+//		<< "legal chars for password {a-z,A-Z,0-9,@#$%^&*()_+=-,} space is illegal and it should't contain only numbers)" << endl;
+//	cout << "Enter your User Name:" << endl;
+//	do {
+//		cin >> user_name;
+//	} while (!User::check_user_name(user_name));
+//	string file_path = "Assets/users/" + user_name + ".bin";
+//	if (!file_exist(file_path)) {
+//		cout << "User name not found! please sign up!" << endl;
+//		return "";
+//	}
+//	return file_path;
+//}
+//void reset_keys();
+void Reset_game();
 void Exit_game();
 void print_screen();
 void print_score_board();
@@ -277,6 +415,7 @@ void sleep_sec(float);
 void char_to_lower(char&);
 void read_max_level();
 void write_max_level(int& max_level);
+void Credits_print();
 bool ask_yn(string question_with_enter = "") {
 	cout << question_with_enter;
 	char yn;
@@ -288,9 +427,11 @@ bool ask_yn(string question_with_enter = "") {
 		{
 		case 'y':
 			result = true;
+			broken = true;
 			break;
 		case 'n':
 			result = false;
+			broken = true;
 			break;
 		default:
 			cout << "Please just enter y for yes or n for no:" << endl;
@@ -299,436 +440,514 @@ bool ask_yn(string question_with_enter = "") {
 	} while (!broken);
 	return result;
 }
+void Register() {
+	bool passed_reg_stage = false;
+	user = User();
+	do {
+		if (ask_yn("Are you a new user?\n")) {
+			if (ask_yn("Would you like to sign up?\n")) {
+				passed_reg_stage = user.Sign_up();
+			}
+			else {
+				just_play = true;
+				passed_reg_stage = true;
+			}
+		}
+		else {
+			passed_reg_stage = user.Login();
+		}
+	} while (!passed_reg_stage);
+}
+
 //bool play_sound(LPCWSTR  path) {
 //	return PlaySound(path, NULL, SND_ASYNC | SND_FILENAME);
 //}
 int main() {
+
 	cout << LOGO << endl;
 	cout << "Welcome to Covid 2030 game!\n";
-	if (ask_yn("Are you a new user?\n")) {
-		if (ask_yn("Would you like to sign up?\n")) {
-			User user;
+	Register();
 
-		}
-		else {
-			just_play = true;
-		}
-	}
-	else {
-
-	}
-
-	char yn = ' ', main_menu;
-	enum main_menu_items { New_Game = 49, Load, Options, Credits, Exit };
-	//srand(time(0));//srand(10);//quera
-	cout << "1 - New Game\n"
-		<< "2 - Load\n"
-		<< "3 - Options\n"
-		<< "4 - Credits\n"
-		<< "5 - Exit" << endl;
-	cin >> main_menu;
-	while (true) {
-
-		read_max_level();
-		get_level_info_from_file(level);
-
-
-		bool game_is_on = true, won = false;
-		round_num = 0;
-		while (game_is_on) {
-			print_screen();
-			char key;
-			cin >> key;//key = getch();
-			char_to_lower(key);
-			round_num++;
-			//first_run = false;
-			enum keys {
-				MV_UP, MV_DOWN, MV_RIGHT, MV_LEFT,
-				SH_UP, SH_DOWN, SH_RIGHT, SH_LEFT,
-				RELOAD_KEY, EXIT_KEY, UPGRADE_KEY, MENU_KEY
-			};
-			switch (key) {
-			case 'w': case 'a': case 's': case 'd':
-				Player.get_coordinate().move(key, HEIGHT, WIDTH);//player
-				break;
-			case 't': case 'g': case 'h':case 'f': {
-				if (charged > 0) {
-					charged--;
-					//PlaySound(L"Assets/sound/gun shot.wav", NULL, SND_ASYNC | SND_FILENAME);
-					PlaySound(TEXT("Assets/sound/gun shot.wav"), NULL, SND_ASYNC | SND_FILENAME);
-					//LPCWSTR  a1 = L"Assets/sound/gun shot.wav";
-					//PlaySound((a1), NULL, SND_ASYNC | SND_FILENAME);
-					int index = -1;
-					bool found = false;
-					bool not_in_range = false;
-					vector < int > cor_diff;
-					vector < int > indexes;
-					for (int i = 0; i < Item_Interface::Zombies.size(); i++)
-					{
-						if (key == 'g') {
-							if (Item_Interface::Zombies[i].get_coordinate().get_Xcor() == Player.get_coordinate().get_Xcor()
-								&& Item_Interface::Zombies[i].get_coordinate().get_Ycor() >= Player.get_coordinate().get_Ycor()) {
-
-								if (Item_Interface::Zombies[i].get_coordinate().get_Ycor() - Player.get_coordinate().get_Ycor() <= range_gun) {
-									cor_diff.push_back(Item_Interface::Zombies[i].get_coordinate().get_Ycor() - Player.get_coordinate().get_Ycor());
-									indexes.push_back(i);
-									found = true;
-								}
-								else
-									not_in_range = true;
-							}
-						}
-
-						else if (key == 't') {
-							if (Item_Interface::Zombies[i].get_coordinate().get_Xcor() == Player.get_coordinate().get_Xcor()
-								&& Item_Interface::Zombies[i].get_coordinate().get_Ycor() <= Player.get_coordinate().get_Ycor()) {
-								if (Player.get_coordinate().get_Ycor() - Item_Interface::Zombies[i].get_coordinate().get_Ycor() <= range_gun) {
-									cor_diff.push_back(Player.get_coordinate().get_Ycor() - Item_Interface::Zombies[i].get_coordinate().get_Ycor());
-									indexes.push_back(i);
-									found = true;
-								}
-								else
-									not_in_range = true;
-							}
-						}
-						else if (key == 'h') {
-							if (Item_Interface::Zombies[i].get_coordinate().get_Ycor() == Player.get_coordinate().get_Ycor()
-								&& Item_Interface::Zombies[i].get_coordinate().get_Xcor() >= Player.get_coordinate().get_Xcor()) {
-								if (Item_Interface::Zombies[i].get_coordinate().get_Xcor() - Player.get_coordinate().get_Xcor() <= range_gun) {
-									cor_diff.push_back(Item_Interface::Zombies[i].get_coordinate().get_Xcor() - Player.get_coordinate().get_Xcor());
-									indexes.push_back(i);
-									found = true;
-								}
-								else
-									not_in_range = true;
-							}
-						}
-						else if (key == 'f') {
-							if (Item_Interface::Zombies[i].get_coordinate().get_Ycor() == Player.get_coordinate().get_Ycor()
-								&& Item_Interface::Zombies[i].get_coordinate().get_Xcor() <= Player.get_coordinate().get_Xcor()) {
-								if (Player.get_coordinate().get_Xcor() - Item_Interface::Zombies[i].get_coordinate().get_Xcor() <= range_gun) {
-									cor_diff.push_back(Player.get_coordinate().get_Xcor() - Item_Interface::Zombies[i].get_coordinate().get_Xcor());
-									indexes.push_back(i);
-									found = true;
-								}
-								else
-									not_in_range = true;
-							}
-						}
-
-
-					}
-					if (found) {
-						auto min = min_element(cor_diff.begin(), cor_diff.end());
-						index = indexes[min - cor_diff.begin()];
-					}
-					if (index != -1 && found) {
-						Item_Interface::Zombies.erase(Item_Interface::Zombies.begin() + index);
-
-
-						wchar_t wcs[80];
-						wcscpy_s(wcs, L"Assets/sound/Shot/");
-						string omg = "";
-						switch (kill % 14)
-						{
-						case 0:
-							wcscat_s(wcs, L"0 - First Blood.wav");
-							omg = "First Blood";
-							break;
-						case 1:
-							wcscat_s(wcs, L"1 - Double Kill.wav");
-							omg = "Double Kill";
-							break;
-						case 2:
-							if (round_num % 2 == 0) {
-								wcscat_s(wcs, L"2 - Triple Kill.wav");
-								omg = "Triple Kill";
-							}
-							else {
-								wcscat_s(wcs, L"2 - Hattrick.wav");
-								omg = "Hattrick";
-							}
-							break;
-						case 3:
-							wcscat_s(wcs, L"3 - Team Killer.wav");
-							omg = "Team Killer";
-							break;
-						case 4:
-							wcscat_s(wcs, L"4 - Headshot.wav");
-							omg = "Headshot";
-							break;
-						case 5:
-							wcscat_s(wcs, L"5 - Rampage.wav");
-							omg = "Rampage";
-							break;
-						case 6:
-							wcscat_s(wcs, L"6 - Killing Spree.wav");
-							omg = "Killing Spree";
-							break;
-						case 7:
-							wcscat_s(wcs, L"7 - Unstoppable.wav");
-							omg = "Unstoppable";
-							break;
-						case 8:
-							wcscat_s(wcs, L"8 - Monster Kill.wav");
-							omg = "Monster Kill";
-							break;
-						case 9:
-							wcscat_s(wcs, L"9 - Multi Kill.wav");
-							omg = "Multi Kill";
-							break;
-						case 10:
-							wcscat_s(wcs, L"10 - Ludicrouskill.wav");
-							omg = "Ludicrouskill";
-							break;
-						case 11:
-							wcscat_s(wcs, L"11 - Ultra Kill.wav");
-							omg = "Ultra Kill";
-							break;
-						case 12:
-							wcscat_s(wcs, L"12 - Dominating.wav");
-							omg = "Dominating";
-							break;
-						case 13:
-							wcscat_s(wcs, L"13 - Godlike.wav");
-							omg = "Godlike";
-							break;
-						}
-						kill++;
-						print_screen();
-						sleep_sec(1);
-						int credit_gained = level + 1;
-						credit += credit_gained;
-						cout << omg << endl
-							<< credit_gained << " credit gained!" << endl;
-
-						PlaySound(wcs, NULL, SND_ASYNC | SND_FILENAME);
-
-						sleep_sec(2);
-						PlaySound(L"Assets/sound/zombie-choking.wav", NULL, SND_ASYNC | SND_FILENAME);
-					}
-					else if (not_in_range) {
-						cout << "Zombie is not in range! come closer." << endl;
-						sleep_sec(1.5);
-					}
-				}
-				else {
-					cout << "No charged ammo!" << endl;
-					/// <summary>
-					///moshkel
-					/// </summary>
-					/// <returns></returns>
-					PlaySound(L"Assets/sound/out-of-ammo-no-ammo.wav", NULL, SND_ASYNC | SND_FILENAME);
-					sleep_sec(1.5);
-				}
+	while (!is_exit) {
+		char yn = ' ', main_menu;			//'0'
+		enum main_menu_items { Register_stage = 48, New_Game, Load, Settings, Credits, Exit };
+		//srand(time(0));//srand(10);//quera
+		Clear_scr();
+		cout << "0 - Register\n"
+			<< "1 - New Game\n"
+			<< "2 - Load\n"
+			<< "3 - Settings\n"
+			<< "4 - Credits\n"
+			<< "5 - Exit" << endl;
+		cin >> main_menu;
+		switch (main_menu)
+		{
+		case Register_stage:
+			if (ask_yn("Warning: if you have already loged in you'll be loged out and your unsaved data will be lost.Would you like to continue?\n"))
+				Register();
+			break;
+		case Load:
+			if (!just_play)
+				user.Load();
+			else {
+				cout << "You did't Log in!" << endl;
 				break;
 			}
-			case 'r': {
-				//reload
-				if (ammo > 0) {
-					if (charged < magazine_capacity) {
-						cout << "Reloaded!" << endl;
-						PlaySound(L"Assets/sound/reload.wav", NULL, SND_ASYNC | SND_FILENAME);
-						sleep_sec(1.5);
-						int need = magazine_capacity - charged;
-						if (need > ammo) {
-							charged += ammo;
-							ammo = 0;
+		case New_Game:
+			if (main_menu != Load)
+				reset_values();
+			//while bazi
+			while (true) {
+
+				read_max_level();
+				get_level_info_from_file(level);
+
+				bool game_is_on = true, won = false;
+				round_num = 0;
+				while (game_is_on) {
+					print_screen();
+					char key;
+					cin >> key;//key = getch();
+					char_to_lower(key);
+					round_num++;
+					//first_run = false;
+					enum keys {
+						MV_UP = 'w', MV_DOWN = 's', MV_RIGHT = 'd', MV_LEFT = 'a',
+						SH_UP = 't', SH_DOWN = 'g', SH_RIGHT = 'h', SH_LEFT = 'f',
+						RELOAD_KEY = 'r', EXIT_KEY = 'e', UPGRADE_KEY = 'u', MENU_KEY = 'm'
+					};
+
+					switch (key) {
+					case MV_UP: case MV_LEFT: case MV_DOWN: case MV_RIGHT:
+						Player.get_coordinate().move(key, HEIGHT, WIDTH);//player
+						break;
+					case SH_UP: case SH_DOWN: case SH_RIGHT:case SH_LEFT: {
+						if (charged > 0) {
+							charged--;
+							//PlaySound(L"Assets/sound/gun shot.wav", NULL, SND_ASYNC | SND_FILENAME);
+							PlaySound(TEXT("Assets/sound/gun shot.wav"), NULL, SND_ASYNC | SND_FILENAME);
+							//LPCWSTR  a1 = L"Assets/sound/gun shot.wav";
+							//PlaySound((a1), NULL, SND_ASYNC | SND_FILENAME);
+							int index = -1;
+							bool found = false;
+							bool not_in_range = false;
+							vector < int > cor_diff;
+							vector < int > indexes;
+							for (int i = 0; i < Item_Interface::Zombies.size(); i++)
+							{
+								if (key == SH_DOWN) {
+									if (Item_Interface::Zombies[i].get_coordinate().get_Xcor() == Player.get_coordinate().get_Xcor()
+										&& Item_Interface::Zombies[i].get_coordinate().get_Ycor() >= Player.get_coordinate().get_Ycor()) {
+
+										if (Item_Interface::Zombies[i].get_coordinate().get_Ycor() - Player.get_coordinate().get_Ycor() <= range_gun) {
+											cor_diff.push_back(Item_Interface::Zombies[i].get_coordinate().get_Ycor() - Player.get_coordinate().get_Ycor());
+											indexes.push_back(i);
+											found = true;
+										}
+										else
+											not_in_range = true;
+									}
+								}
+
+								else if (key == SH_UP) {
+									if (Item_Interface::Zombies[i].get_coordinate().get_Xcor() == Player.get_coordinate().get_Xcor()
+										&& Item_Interface::Zombies[i].get_coordinate().get_Ycor() <= Player.get_coordinate().get_Ycor()) {
+										if (Player.get_coordinate().get_Ycor() - Item_Interface::Zombies[i].get_coordinate().get_Ycor() <= range_gun) {
+											cor_diff.push_back(Player.get_coordinate().get_Ycor() - Item_Interface::Zombies[i].get_coordinate().get_Ycor());
+											indexes.push_back(i);
+											found = true;
+										}
+										else
+											not_in_range = true;
+									}
+								}
+								else if (key == SH_RIGHT) {
+									if (Item_Interface::Zombies[i].get_coordinate().get_Ycor() == Player.get_coordinate().get_Ycor()
+										&& Item_Interface::Zombies[i].get_coordinate().get_Xcor() >= Player.get_coordinate().get_Xcor()) {
+										if (Item_Interface::Zombies[i].get_coordinate().get_Xcor() - Player.get_coordinate().get_Xcor() <= range_gun) {
+											cor_diff.push_back(Item_Interface::Zombies[i].get_coordinate().get_Xcor() - Player.get_coordinate().get_Xcor());
+											indexes.push_back(i);
+											found = true;
+										}
+										else
+											not_in_range = true;
+									}
+								}
+								else if (key == SH_LEFT) {
+									if (Item_Interface::Zombies[i].get_coordinate().get_Ycor() == Player.get_coordinate().get_Ycor()
+										&& Item_Interface::Zombies[i].get_coordinate().get_Xcor() <= Player.get_coordinate().get_Xcor()) {
+										if (Player.get_coordinate().get_Xcor() - Item_Interface::Zombies[i].get_coordinate().get_Xcor() <= range_gun) {
+											cor_diff.push_back(Player.get_coordinate().get_Xcor() - Item_Interface::Zombies[i].get_coordinate().get_Xcor());
+											indexes.push_back(i);
+											found = true;
+										}
+										else
+											not_in_range = true;
+									}
+								}
+
+
+							}
+							if (found) {
+								auto min = min_element(cor_diff.begin(), cor_diff.end());
+								index = indexes[min - cor_diff.begin()];
+							}
+							if (index != -1 && found) {
+								Item_Interface::Zombies.erase(Item_Interface::Zombies.begin() + index);
+
+
+								wchar_t wcs[80];
+								wcscpy_s(wcs, L"Assets/sound/Shot/");
+								string omg = "";
+								switch (kill % 14)
+								{
+								case 0:
+									wcscat_s(wcs, L"0 - First Blood.wav");
+									omg = "First Blood";
+									break;
+								case 1:
+									wcscat_s(wcs, L"1 - Double Kill.wav");
+									omg = "Double Kill";
+									break;
+								case 2:
+									if (round_num % 2 == 0) {
+										wcscat_s(wcs, L"2 - Triple Kill.wav");
+										omg = "Triple Kill";
+									}
+									else {
+										wcscat_s(wcs, L"2 - Hattrick.wav");
+										omg = "Hattrick";
+									}
+									break;
+								case 3:
+									wcscat_s(wcs, L"3 - Team Killer.wav");
+									omg = "Team Killer";
+									break;
+								case 4:
+									wcscat_s(wcs, L"4 - Headshot.wav");
+									omg = "Headshot";
+									break;
+								case 5:
+									wcscat_s(wcs, L"5 - Rampage.wav");
+									omg = "Rampage";
+									break;
+								case 6:
+									wcscat_s(wcs, L"6 - Killing Spree.wav");
+									omg = "Killing Spree";
+									break;
+								case 7:
+									wcscat_s(wcs, L"7 - Unstoppable.wav");
+									omg = "Unstoppable";
+									break;
+								case 8:
+									wcscat_s(wcs, L"8 - Monster Kill.wav");
+									omg = "Monster Kill";
+									break;
+								case 9:
+									wcscat_s(wcs, L"9 - Multi Kill.wav");
+									omg = "Multi Kill";
+									break;
+								case 10:
+									wcscat_s(wcs, L"10 - Ludicrouskill.wav");
+									omg = "Ludicrouskill";
+									break;
+								case 11:
+									wcscat_s(wcs, L"11 - Ultra Kill.wav");
+									omg = "Ultra Kill";
+									break;
+								case 12:
+									wcscat_s(wcs, L"12 - Dominating.wav");
+									omg = "Dominating";
+									break;
+								case 13:
+									wcscat_s(wcs, L"13 - Godlike.wav");
+									omg = "Godlike";
+									break;
+								}
+								kill++;
+								print_screen();
+								sleep_sec(1);
+								int credit_gained = level + 1;
+								credit += credit_gained;
+								cout << omg << endl
+									<< credit_gained << " credit gained!" << endl;
+
+								PlaySound(wcs, NULL, SND_ASYNC | SND_FILENAME);
+
+								sleep_sec(2);
+								PlaySound(L"Assets/sound/zombie-choking.wav", NULL, SND_ASYNC | SND_FILENAME);
+							}
+							else if (not_in_range) {
+								cout << "Zombie is not in range! come closer." << endl;
+								sleep_sec(1.5);
+							}
 						}
 						else {
-							ammo -= need;
-							charged += need;
+							cout << "No charged ammo!" << endl;
+							/// <summary>
+							///moshkel
+							/// </summary>
+							/// <returns></returns>
+							PlaySound(L"Assets/sound/out-of-ammo-no-ammo.wav", NULL, SND_ASYNC | SND_FILENAME);
+							sleep_sec(1.5);
+						}
+						break;
+					}
+					case RELOAD_KEY: {
+						//reload
+						if (ammo > 0) {
+							if (charged < magazine_capacity) {
+								cout << "Reloaded!" << endl;
+								PlaySound(L"Assets/sound/reload.wav", NULL, SND_ASYNC | SND_FILENAME);
+								sleep_sec(1.5);
+								int need = magazine_capacity - charged;
+								if (need > ammo) {
+									charged += ammo;
+									ammo = 0;
+								}
+								else {
+									ammo -= need;
+									charged += need;
+								}
+							}
+							else if (charged == 3) {
+								cout << "The gun is already Charged" << endl;
+								sleep_sec(1.5);
+							}
+						}
+						else {
+							cout << "No Ammo!" << endl;
+							PlaySound(L"Assets/sound/out-of-ammo-no-ammo.wav", NULL, SND_ASYNC | SND_FILENAME);
+							sleep_sec(1.5);
+						}
+						break;
+					}
+					case EXIT_KEY: {
+						//cout << "Are you sure that you want to exit the game?" << endl;
+						game_is_on = false;
+						yn = 'n';
+						if (!just_play && ask_yn("Would you like to save your data?\n"))
+							user.Save();
+						break;
+					}
+					case UPGRADE_KEY:
+						base_menu();
+						break;
+					case MENU_KEY: {
+						enum game_menu_items { Return_to_game = 48, New_Game, Save, Load, Options, Exit };
+						char game_menu;
+						bool broken;
+						cout << "0 - Return to game\n"
+							<< "1 - New Game\n"
+							<< "2 - Save\n"
+							<< "3 - Load\n"
+							<< "4 - Options\n"
+							<< "5 - Exit" << endl;
+						do {
+							broken = true;
+							cin >> game_menu;
+							switch (game_menu)
+							{
+							case Return_to_game:
+								break;
+							case Load:
+								if (!just_play)
+									user.Load();
+								else {
+									cout << "You did't Log in!" << endl;
+									break;
+								}
+							case New_Game:
+								if (game_menu != Load)
+									Reset_game();
+								break;
+							case Save:
+								if (!just_play)
+									user.Save();
+								else {
+									cout << "You did't Log in!" << endl;
+									break;
+								}
+								break;
+							case Exit:
+								game_is_on = false;
+								yn = 'n';
+								if (!just_play && ask_yn("Would you like to save your data?\n"))
+									user.Save();
+								break;
+							default:
+								cout << "Please just enter the numbers in the menu:" << endl;
+								broken = false;
+								break;
+							}
+						} while (!broken);
+					}
+					}
+					/*
+							if (!PlaySound(L"dornandaz.wav", NULL, SND_ASYNC | SND_FILENAME))
+								printf("error\n");*/
+								/*const char* a1 = "test.wav";
+								string a2 = "test.wav";
+								wstring filename(L"C:\\test.wav");*/
+
+								//play congratulations.wav
+								//mciSendString(a1.c_str(), NULL, 0, NULL);
+								//PlaySound(TEXT("test.wav"), NULL, SND_FILENAME | SND_ASYNC);
+								//PlaySound(L"test.wav", NULL, SND_ASYNC | SND_FILENAME);
+								/*WIN32_FIND_DATA fd = { 0 };
+
+								HANDLE hFile = FindFirstFileW(filename.c_str(), &fd);
+								if(hFile != INVALID_HANDLE_VALUE)
+									PlaySound(filename.c_str(), NULL, SND_ASYNC | SND_FILENAME);
+								*/
+
+								//PlaySound((a1.c_str()), NULL, SND_SYNC);
+								//PlaySound("kenny g.WAV", NULL, SND_ASYNC);
+								//magically_do_something_platform_and_implementation_specific(PLAY_MUSIC, "test.wav");
+
+
+
+
+					for (int i = 0; i < Item_Interface::Zombies.size(); i++)//enemy moves
+					{
+						int Ex = Item_Interface::Zombies[i].get_coordinate().get_Xcor(), Ey = Item_Interface::Zombies[i].get_coordinate().get_Ycor(),
+							Px = Player.get_coordinate().get_Xcor(), Py = Player.get_coordinate().get_Ycor();
+						if (round_num % 2 == 0) {//zombie move
+							if (Px > Ex)
+								Item_Interface::Zombies[i].get_coordinate().move('d', HEIGHT, WIDTH);
+							else if (Px < Ex)
+								Item_Interface::Zombies[i].get_coordinate().move('a', HEIGHT, WIDTH);
+							else if (Py > Ey)
+								Item_Interface::Zombies[i].get_coordinate().move('s', HEIGHT, WIDTH);
+							else if (Py < Ey)
+								Item_Interface::Zombies[i].get_coordinate().move('w', HEIGHT, WIDTH);
+						}
+						//print(Zombies, Coins, Door);
+
+						//Zombie ate us
+						if (abs(Px - Ex) <= 1 && abs(Py - Ey) <= 1) {
+							/*game_is_on = false;
+							won = false;*/
+							health--;
+							print_screen();
+							PlaySound(L"Assets/sound/zombies-eating.wav", NULL, SND_ASYNC | SND_FILENAME);
+							cout << "The zombie is eating you! You lost one of your healths!" << endl;
+							sleep_sec(2);
+							if (health <= 0)
+								break;
+						}
+
+					}
+					if (health <= 0) {//die
+						game_is_on = false;
+						won = false;
+						print_screen();
+						cout << "You Died!" << endl;
+						PlaySound(L"Assets/sound/evillaugh.wav", NULL, SND_ASYNC | SND_FILENAME);
+						//break;
+					}
+					//Door
+					if (Player == Door) {
+						if (Item_Interface::Vaccines.size() == 0) {
+							game_is_on = false;
+							won = true;
+							print_screen();
+							PlaySound(L"Assets/sound/mission-complete.wav", NULL, SND_ASYNC | SND_FILENAME);
+							//break;
+						}
+						else {
+							print_screen();
+							cout << "First get all the Vaccines." << endl;
+							PlaySound(L"Assets/sound/First Get all the Vaccines.wav", NULL, SND_ASYNC | SND_FILENAME);
+							sleep_sec(1.5);
 						}
 					}
-					else if (charged == 3) {
-						cout << "The gun is already Charged" << endl;
-						sleep_sec(1.5);
+					//Ammo
+					else {
+						for (int i = 0; i < Item_Interface::Ammunition.size(); i++)
+						{
+							if (Player == Item_Interface::Ammunition[i])
+							{
+								Item_Interface::Ammunition.erase(Item_Interface::Ammunition.begin() + i);
+								ammo++;
+								print_screen();
+								cout << "Ammo collected!" << endl;
+								PlaySound(L"Assets/sound/Ammo collected.wav", NULL, SND_ASYNC | SND_FILENAME);
+								sleep_sec(1.5);
+							}
+						}
+						for (int i = 0; i < Item_Interface::Vaccines.size(); i++)
+						{
+							if (Item_Interface::Vaccines[i] == Player) {
+								Item_Interface::Vaccines.erase(Item_Interface::Vaccines.begin() + i);
+								vaccine++;
+								print_screen();
+								int credit_gained = level + 1;
+								credit += credit_gained;
+								cout << "Vaccine collected!" << endl
+									<< credit_gained << " credit gained!" << endl;
+								PlaySound(L"Assets/sound/Vaccine collected.wav", NULL, SND_ASYNC | SND_FILENAME);
+								sleep_sec(1.5);
+							}
+
+						}
 					}
 				}
-				else {
-					cout << "No Ammo!" << endl;
-					PlaySound(L"Assets/sound/out-of-ammo-no-ammo.wav", NULL, SND_ASYNC | SND_FILENAME);
-					sleep_sec(1.5);
-				}
-				break;
-			}
-			case 'e': {
-				//cout << "Are you sure that you want to exit the game?" << endl;
-				game_is_on = false;
-				yn = 'n';
-				break;
-			}
-			case 'u':
-				base_menu();
-				break;
-			case 'm':
-				enum game_menu_items { Return_to_game = 48, New_Game, Save, Load, Options, Exit };
-				char game_menu;
-				bool broken = false;
-				cout << "0 - Return to game\n"
-					<< "1 - New Game\n"
-					<< "2 - Save\n"
-					<< "3 - Load\n"
-					<< "4 - Options\n"
-					<< "5 - Exit" << endl;
-				cin >> game_menu;
-				switch (game_menu)
-				{
-				case Return_to_game:
-					broken = true;
-					break;
-				case New_Game:
-				default:
-					break;
-				}
-			}	/*
-				if (!PlaySound(L"dornandaz.wav", NULL, SND_ASYNC | SND_FILENAME))
-					printf("error\n");*/
-					/*const char* a1 = "test.wav";
-					string a2 = "test.wav";
-					wstring filename(L"C:\\test.wav");*/
-
-					//play congratulations.wav
-					//mciSendString(a1.c_str(), NULL, 0, NULL);
-					//PlaySound(TEXT("test.wav"), NULL, SND_FILENAME | SND_ASYNC);
-					//PlaySound(L"test.wav", NULL, SND_ASYNC | SND_FILENAME);
-					/*WIN32_FIND_DATA fd = { 0 };
-
-					HANDLE hFile = FindFirstFileW(filename.c_str(), &fd);
-					if(hFile != INVALID_HANDLE_VALUE)
-						PlaySound(filename.c_str(), NULL, SND_ASYNC | SND_FILENAME);
-					*/
-
-					//PlaySound((a1.c_str()), NULL, SND_SYNC);
-					//PlaySound("kenny g.WAV", NULL, SND_ASYNC);
-					//magically_do_something_platform_and_implementation_specific(PLAY_MUSIC, "test.wav");
-
-
-
-
-			for (int i = 0; i < Item_Interface::Zombies.size(); i++)//enemy moves
-			{
-				int Ex = Item_Interface::Zombies[i].get_coordinate().get_Xcor(), Ey = Item_Interface::Zombies[i].get_coordinate().get_Ycor(),
-					Px = Player.get_coordinate().get_Xcor(), Py = Player.get_coordinate().get_Ycor();
-				if (round_num % 2 == 0) {//zombie move
-					if (Px > Ex)
-						Item_Interface::Zombies[i].get_coordinate().move('d', HEIGHT, WIDTH);
-					else if (Px < Ex)
-						Item_Interface::Zombies[i].get_coordinate().move('a', HEIGHT, WIDTH);
-					else if (Py > Ey)
-						Item_Interface::Zombies[i].get_coordinate().move('s', HEIGHT, WIDTH);
-					else if (Py < Ey)
-						Item_Interface::Zombies[i].get_coordinate().move('w', HEIGHT, WIDTH);
-				}
-				//print(Zombies, Coins, Door);
-
-				//Zombie ate us
-				if (abs(Px - Ex) <= 1 && abs(Py - Ey) <= 1) {
-					/*game_is_on = false;
-					won = false;*/
-					health--;
-					print_screen();
-					PlaySound(L"Assets/sound/zombies-eating.wav", NULL, SND_ASYNC | SND_FILENAME);
-					cout << "The zombie is eating you! You lost one of your healths!" << endl;
-					sleep_sec(2);
-					if (health <= 0)
-						break;
-				}
-
-			}
-			if (health <= 0) {//die
-				game_is_on = false;
-				won = false;
-				print_screen();
-				cout << "You Died!" << endl;
-				PlaySound(L"Assets/sound/evillaugh.wav", NULL, SND_ASYNC | SND_FILENAME);
-				//break;
-			}
-			//Door
-			if (Player == Door) {
-				if (Item_Interface::Vaccines.size() == 0) {
-					game_is_on = false;
-					won = true;
-					print_screen();
-					PlaySound(L"Assets/sound/mission-complete.wav", NULL, SND_ASYNC | SND_FILENAME);
-					//break;
-				}
-				else {
-					print_screen();
-					cout << "First get all the Vaccines." << endl;
-					PlaySound(L"Assets/sound/First Get all the Vaccines.wav", NULL, SND_ASYNC | SND_FILENAME);
-					sleep_sec(1.5);
-				}
-			}
-			//Ammo
-			else {
-				for (int i = 0; i < Item_Interface::Ammunition.size(); i++)
-				{
-					if (Player == Item_Interface::Ammunition[i])
-					{
-						Item_Interface::Ammunition.erase(Item_Interface::Ammunition.begin() + i);
-						ammo++;
-						print_screen();
-						cout << "Ammo collected!" << endl;
-						PlaySound(L"Assets/sound/Ammo collected.wav", NULL, SND_ASYNC | SND_FILENAME);
-						sleep_sec(1.5);
-					}
-				}
-				for (int i = 0; i < Item_Interface::Vaccines.size(); i++)
-				{
-					if (Item_Interface::Vaccines[i] == Player) {
-						Item_Interface::Vaccines.erase(Item_Interface::Vaccines.begin() + i);
-						vaccine++;
-						print_screen();
-						int credit_gained = level + 1;
+				if (won) {
+					level++;
+					if (level != END_LEVEL + 1) {
+						int credit_gained = level;
 						credit += credit_gained;
-						cout << "Vaccine collected!" << endl
+						cout << "Well Done! You have reached level " << level << endl
 							<< credit_gained << " credit gained!" << endl;
-						PlaySound(L"Assets/sound/Vaccine collected.wav", NULL, SND_ASYNC | SND_FILENAME);
 						sleep_sec(1.5);
 					}
-
+					else if (level == END_LEVEL + 1) {
+						cout << "Congratulations! You have successfully collected all the Vaccines! Now it is time to return to the Earth" << endl;
+						cout << "Good Bye!" << endl;
+						break;
+					}
 				}
+				else {
+					if (yn != 'n')
+						cout << "You Lose! Would you like to try again?(y/n)" << endl;
+					//char yn;
+					while (yn != 'n') {
+						cin >> yn;
+						if (yn == 'y' || yn == 'n')
+							break;
+						cout << "Please just enter y for yes or n for no:" << endl;
+					}
+					if (yn == 'y') {
+						cout << "The game will restart in 5 seconds" << endl;
+						reset_values();
+						sleep_sec(5);
+					}
+					else if (yn == 'n') {
+						//Exit_game();
+						break;
+					}
+				}
+				/*Zombies.clear();
+				Vaccines.clear();
+				Ammo.clear();*/
 			}
-		}
-		if (won) {
-			level++;
-			if (level != END_LEVEL + 1) {
-				int credit_gained = level;
-				credit += credit_gained;
-				cout << "Well Done! You have reached level " << level << endl
-					<< credit_gained << " credit gained!" << endl;
-				sleep_sec(1.5);
-			}
-			else if (level == END_LEVEL + 1) {
-				cout << "Congratulations! You have successfully collected all the Vaccines! Now it is time to return to the Earth" << endl;
-				cout << "Good Bye!" << endl;
-				break;
-			}
-		}
-		else {
-			if (yn != 'n')
-				cout << "You Lose! Would you like to try again?(y/n)" << endl;
-			//char yn;
-			while (yn != 'n') {
-				cin >> yn;
-				if (yn == 'y' || yn == 'n')
-					break;
-				cout << "Please just enter y for yes or n for no:" << endl;
-			}
-			if (yn == 'y') {
-				cout << "The game will restart in 5 seconds" << endl;
-				reset_values();
-				sleep_sec(5);
-			}
-			else if (yn == 'n') {
+			break;
+		case Settings:
+
+			break;
+		case Credits:
+			Credits_print();
+			break;
+		case Exit:
+			if (ask_yn("Are you sure you want to exit the game?\nWarning: All unsaved data will be lost!\n")) {
+				is_exit = true;
 				Exit_game();
-				break;
 			}
+			break;
+		default:
+			break;
 		}
-		/*Zombies.clear();
-		Vaccines.clear();
-		Ammo.clear();*/
 	}
 	return 0;
 
@@ -750,6 +969,20 @@ void reset_values() {
 	round_num = 0;
 	magazine_capacity = 3;
 }
+//void reset_keys() {
+//	keys_chars[0] = 'w';
+//	keys_chars[1] = 'a';
+//	keys_chars[2] = 's';
+//	keys_chars[3] = 'd';
+//	keys_chars[4] = 't';
+//	keys_chars[5] = 'f';
+//	keys_chars[6] = 'g';
+//	keys_chars[7] = 'h';
+//	keys_chars[8] = 'r';
+//	keys_chars[9] = 'e';
+//	keys_chars[10] = 'u';
+//	keys_chars[11] = 'm';
+//}
 void Upgrade_item(const int& credit_needed, int& item, const int max_item, string item_text) {
 	if (item < max_item) {
 		if (credit >= credit_needed) {
@@ -951,4 +1184,24 @@ void read_max_level()
 	}
 	in_max_level_file.read(reinterpret_cast<char*>(&END_LEVEL), sizeof(int));
 	in_max_level_file.close();
+}
+void Credits_print() {
+	string text = "\t\t\tMohammad Sadegh Poulaei\n\t\t\t     Mousa Salehi\n\t\t\tMohammadReza SaemiPour";
+
+	for (int i = 20; i > 0; i--)
+	{
+		Clear_scr();
+		for (int j = 0; j < i; j++)
+		{
+			cout << '\n';
+		}
+		cout << text << endl;
+		sleep_sec(.1);
+	}
+	sleep_sec(2);
+}
+void Reset_game() {
+	reset_values();
+	read_max_level();
+	get_level_info_from_file(level);
 }
