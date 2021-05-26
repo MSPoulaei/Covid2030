@@ -22,7 +22,8 @@
 #define MAX_MAG_CAP 7
 #define MAX_GUN_RANGE 10
 #define MAX_HEALTH 5
-#define LOGO " ######   #######  ##     ## #### ########      #######    #####    #######    #####   \n\
+#define LOGO \
+" ######   #######  ##     ## #### ########      #######    #####    #######    #####   \n\
 ##    ## ##     ## ##     ##  ##  ##     ##    ##     ##  ##   ##  ##     ##  ##   ##  \n\
 ##       ##     ## ##     ##  ##  ##     ##           ## ##     ##        ## ##     ## \n\
 ##       ##     ## ##     ##  ##  ##     ##     #######  ##     ##  #######  ##     ## \n\
@@ -76,7 +77,7 @@ private:
 	T* arr = new T[max_size];
 public:
 	Array(int max_siz = 30, int add_siz = 30) :max_size(max_siz), add_size(add_siz), size_num(0) {}
-	~Array() { delete[] arr; }
+	//~Array() { delete[] arr; }
 	void push_back(const T& v) {
 		if (size_num == max_size) {
 			max_size += add_size;
@@ -101,7 +102,7 @@ public:
 	T& operator[](const int& index) {
 		return arr[index];
 	}
-	void operator=(const T& v) {
+	void operator=(const Array<T>& v) {
 		this->size_num = v.size_num;
 		this->arr = v.arr;
 	}
@@ -130,9 +131,9 @@ public:
 		case 'a': if (Xcor - 1 >= 0) Xcor--; break;
 		}
 	}
-	void goto_cordnate(int Xcor, int Ycor) {
-		this->Xcor = Xcor;
-		this->Ycor = Ycor;
+	void goto_cordnate(int Xcord, int Ycord) {
+		Xcor = Xcord;
+		Ycor = Ycord;
 	}
 	int get_Xcor() { return Xcor; }
 	int get_Ycor() { return Ycor; }
@@ -199,6 +200,7 @@ private:
 	string file_path;
 	int _level, _health, _ammo, _charged, _vaccine,
 		_kill, _range_gun, _credit, _round_num, _magazine_capacity;
+	bool _mute;
 	//char keys[12];
 	static const int max_user_pass_length;
 	static const int min_user_pass_length;
@@ -218,6 +220,7 @@ private:
 		_credit = 0;
 		_round_num = 0;
 		_magazine_capacity = 3;
+		_mute = false;
 		/*keys[0] = 'w';
 		keys[1] = 'a';
 		keys[2] = 's';
@@ -239,7 +242,10 @@ private:
 	}
 	static bool check_user_name(string user_name) {
 		if (user_name.length() > max_user_pass_length || user_name.length() < min_user_pass_length)
+		{
+			cout << "invalid input! try again:" << endl;
 			return false;
+		}
 		for (int i = 0; i < user_name.length(); i++)
 			if (!(
 				(user_name[i] >= 'a' && user_name[i] <= 'z') ||
@@ -253,7 +259,10 @@ private:
 	};
 	static bool check_password(string password) {
 		if (password.length() > max_user_pass_length || password.length() < min_user_pass_length)
+		{
+			cout << "invalid input! try again:" << endl;
 			return false;
+		}
 		if (string_check_numeric(password)) {
 			cout << "password should't contain only numbers!" << endl;
 			return false;
@@ -274,8 +283,23 @@ private:
 		return true;
 	};
 	void Save_file() {
-		ofstream user_file(file_path, ios::binary);
+		/*ofstream user_file(file_path, ios::binary);
 		user_file.write(reinterpret_cast<const char*>(&(*this)), sizeof((*this)));
+		user_file.close();*/
+		//string address = "Assets/users/" + user_name + ".txt";
+		ofstream user_file(file_path, ios::out);
+		user_file << password << endl;
+		user_file << _level << " " << _vaccine << " " << _credit << " " << _round_num << endl;
+		user_file << _health << " " << _ammo << " " << _charged << " " << _kill << endl;
+		user_file << _range_gun << " " << _magazine_capacity << " " << _mute << endl;
+		user_file << _Player.get_coordinate().get_Xcor() << " " << _Player.get_coordinate().get_Ycor() << endl;
+		user_file << _Zombies.size() << " " << _Vaccines.size() << " " << _Ammunition.size() << endl;
+		for (int i = 0; i < _Zombies.size(); i++)
+			user_file << _Zombies[i].get_coordinate().get_Xcor() << " " << _Zombies[i].get_coordinate().get_Ycor() << endl;
+		for (int i = 0; i < _Vaccines.size(); i++)
+			user_file << _Vaccines[i].get_coordinate().get_Xcor() << " " << _Vaccines[i].get_coordinate().get_Ycor() << endl;
+		for (int i = 0; i < _Ammunition.size(); i++)
+			user_file << _Ammunition[i].get_coordinate().get_Xcor() << " " << _Ammunition[i].get_coordinate().get_Ycor() << endl;
 		user_file.close();
 	}
 public:
@@ -283,14 +307,14 @@ public:
 	~User() {}
 	bool Sign_up() {
 		cout << "(notes: username or password should contain at least " << min_user_pass_length
-			<< " and at most" << max_user_pass_length
-			<< "characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
+			<< " and at most " << max_user_pass_length
+			<< " characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
 			<< "legal chars for password {a-z,A-Z,0-9,@#$%^&*()_+=-,} space is illegal and it should't contain only numbers)" << endl;
 		cout << "Enter your User Name:" << endl;
 		do {
 			cin >> user_name;
 		} while (!check_user_name(user_name));
-		file_path = "Assets/users/" + user_name + ".bin";
+		file_path = "Assets/users/" + user_name + ".txt";
 		if (file_exist(file_path)) {
 			cout << "User with the same user name found! please log in" << endl;
 			return false;
@@ -305,34 +329,61 @@ public:
 		return true;
 	}
 	bool Login() {
-		string password;
+		string password_input;
 		cout << "(notes: username or password should contain at least " << User::min_user_pass_length
-			<< " and at most" << User::max_user_pass_length
-			<< "characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
+			<< " and at most " << User::max_user_pass_length
+			<< " characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
 			<< "legal chars for password {a-z,A-Z,0-9,@#$%^&*()_+=-,} space is illegal and it should't contain only numbers)" << endl;
 		cout << "Enter your User Name:" << endl;
 		do {
 			cin >> user_name;
 		} while (!User::check_user_name(user_name));
-		file_path = "Assets/users/" + user_name + ".bin";
+		file_path = "Assets/users/" + user_name + ".txt";
 		if (!file_exist(file_path)) {
 			cout << "User name not found! please sign up!" << endl;
 			return false;
 		}
 
-		ifstream user_file(file_path, ios::in);
+		/*ifstream user_file(file_path, ios::in);
 		user_file.read(reinterpret_cast<char*>(&(*this)), sizeof((*this)));
+		user_file.close();*/
+		ifstream user_file(file_path, ios::in);
+		user_file >> password;
+		user_file >> _level >> _vaccine >> _credit >> _round_num;
+		user_file >> _health >> _ammo >> _charged >> _kill;
+		int mute;
+		user_file >> _range_gun >> _magazine_capacity >> mute;
+		_mute = false;
+		if (mute)    _mute = true;
+		int x, y;
+		user_file >> x >> y;
+		_Player = Item_Interface(PLAYER_CHAR, x, y);
+		_Door = Item_Interface(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
+		int zombie_size, vaccine_size, ammunition_size;
+		user_file >> zombie_size >> vaccine_size >> ammunition_size;
+		_Zombies.clear(); _Vaccines.clear(); _Ammunition.clear();
+		for (int i = 0; i < zombie_size; i++) {
+			user_file >> x >> y;
+			_Zombies.push_back(Item_Interface(ZOMBIE_CHAR, x, y));
+		}
+		for (int i = 0; i < vaccine_size; i++) {
+			user_file >> x >> y;
+			_Vaccines.push_back(Item_Interface(VACCINE_CHAR, x, y));
+		}
+		for (int i = 0; i < ammunition_size; i++) {
+			user_file >> x >> y;
+			_Ammunition.push_back(Item_Interface(AMMO_CHAR, x, y));
+		}
 		user_file.close();
-
 
 		cout << "Enter your password:" << endl;
 		do {
-			cin >> password;
-		} while (!check_password(password));
-		if (password == this->password) {
+			cin >> password_input;
+		} while (!check_password(password_input));
+		if (password_input == password) {
 			cout << "password is correct" << endl
 				<< "All your data is loaded!" << endl;
-			Load();
+			//Load();
 			return true;
 		}
 		else
@@ -447,6 +498,7 @@ void Register() {
 		if (ask_yn("Are you a new user?\n")) {
 			if (ask_yn("Would you like to sign up?\n")) {
 				passed_reg_stage = user.Sign_up();
+				just_play = !passed_reg_stage;
 			}
 			else {
 				just_play = true;
@@ -455,6 +507,7 @@ void Register() {
 		}
 		else {
 			passed_reg_stage = user.Login();
+			just_play = !passed_reg_stage;
 		}
 	} while (!passed_reg_stage);
 }
@@ -500,10 +553,12 @@ int main() {
 			while (true) {
 
 				read_max_level();
-				get_level_info_from_file(level);
+				if (main_menu != Load)
+					get_level_info_from_file(level);
 
 				bool game_is_on = true, won = false;
-				round_num = 0;
+				if (main_menu != Load)
+					round_num = 0;
 				while (game_is_on) {
 					print_screen();
 					char key;
@@ -950,12 +1005,12 @@ int main() {
 		}
 	}
 	return 0;
-
 }
 void Exit_game() {
 	PlaySound(L"Assets/sound/dornandaz.wav", NULL, SND_ASYNC | SND_FILENAME);
 	cout << "Good Bye!" << endl;
 	sleep_sec(15);
+	exit(1);
 }
 void reset_values() {
 	level = 1;
@@ -968,6 +1023,7 @@ void reset_values() {
 	credit = 0;
 	round_num = 0;
 	magazine_capacity = 3;
+	mute = false;
 }
 //void reset_keys() {
 //	keys_chars[0] = 'w';
