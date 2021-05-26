@@ -22,10 +22,17 @@
 #define MAX_MAG_CAP 7
 #define MAX_GUN_RANGE 10
 #define MAX_HEALTH 5
+#define LOGO " ######   #######  ##     ## #### ########      #######    #####    #######    #####   \n\
+##    ## ##     ## ##     ##  ##  ##     ##    ##     ##  ##   ##  ##     ##  ##   ##  \n\
+##       ##     ## ##     ##  ##  ##     ##           ## ##     ##        ## ##     ## \n\
+##       ##     ## ##     ##  ##  ##     ##     #######  ##     ##  #######  ##     ## \n\
+##       ##     ##  ##   ##   ##  ##     ##    ##        ##     ##        ## ##     ## \n\
+##    ## ##     ##   ## ##    ##  ##     ##    ##         ##   ##  ##     ##  ##   ##  \n\
+######   #######     ###    #### ########     #########   #####    #######    #####   "
 //#include <unistd.h>
 //#include <termios.h>
 using namespace std;
-//bool first_run = true;
+bool just_play = false;
 int WIDTH = 15, HEIGHT = 15, END_LEVEL = 15;
 int level = 1, health = 3, ammo = 0, charged = 3,
 vaccine = 0, kill = 0, range_gun = 5, credit = 0,
@@ -131,7 +138,7 @@ public:
 	/*static Item Player;
 	static Item Door;*/
 
-	
+
 	void set_pic(char& mark) { pic = mark; }
 	char& get_pic() { return pic; }
 	Coordinate& get_coordinate() { return coordinate; }
@@ -167,19 +174,90 @@ class User {
 private:
 	string user_name;
 	string password;
-	int level,helath,ammo,charged,vaccine,
-		kill,range_gun,credit,round_num,magazine_capacity;
+	string file_path;
+	int level, health, ammo, charged, vaccine,
+		kill, range_gun, credit, round_num, magazine_capacity;
 	static const int max_user_pass_length;
 	static const int min_user_pass_length;
+	void reset_values() {
+		level = 1;
+		vaccine = 0;
+		health = 3;
+		ammo = 0;
+		charged = 3;
+		kill = 0;
+		range_gun = 5;
+		credit = 0;
+		round_num = 0;
+		magazine_capacity = 3;
+	}
+	static bool string_check_numeric(string text) {
+		for (int i = 0; i < text.length(); i++)
+			if (!(text[i] >= '0' && text[i] <= '9'))
+				return false;
+		return true;
+	}
+	static bool check_user_name(string user_name) {
+		for (int i = 0; i < user_name.length(); i++)
+			if (!(
+				(user_name[i] >= 'a' && user_name[i] <= 'z') ||
+				(user_name[i] >= 'A' && user_name[i] <= 'Z') ||
+				(user_name[i] >= '0' && user_name[i] <= '9') 
+				)){ 
+				cout << "invalid input! try again:" << endl;
+				return false;
+			}
+		return true;
+	};
+	static bool check_password(string password) {
+		if (string_check_numeric(password))
+			return false;
+		for (int i = 0; i < password.length(); i++)
+			if (!(
+				(password[i] >= 'a' && password[i] <= 'z') ||
+				(password[i] >= 'A' && password[i] <= 'Z') ||
+				(password[i] >= '0' && password[i] <= '9') ||
+				(password[i] >= '#' && password[i] <= '&') ||
+				(password[i] >= '(' && password[i] <= '-') ||
+				(password[i] >= '^' && password[i] <= '_') ||
+				(password[i] == '=') 
+				)) {
+				cout << "invalid input! try again:" << endl;
+				return false;
+			}
+		return true;
+	};
 public:
-	User()
-		
-	{}
-	~User(){}
+	User() {}
+	~User() {}
+	void Sign_up() {
+		cout << "(notes: username or password should contain at least " << min_user_pass_length
+			 << " and at most" << max_user_pass_length
+			 << "characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
+			 << "legal chars for password {a-z,A-Z,0-9,@#$%^&*()_+=-,} space is illegal and it should't contain only numbers)" << endl;
+		cout << "Enter your User Name:" << endl;
+		do {
+			cin >> user_name;
+		} while (!check_user_name(user_name));
+		do {
+			cin >> password;
+		} while (!check_password(password));
+		reset_values();
+		cout << "User with username:"<<user_name<<" and password:"<<password<<" has been registered successfully" << endl;
+		file_path = "Assets/users/" + user_name + ".bin";
+	}
+	void Login() {
+
+	}
+	Item_Interface Player;
+	Item_Interface Door;
+	Array<Item_Interface> Zombies;
+	Array<Item_Interface> Vaccines;
+	Array<Item_Interface> Ammunition;
 };
 
-const int User::max_user_pass_length=20;
-const int User::min_user_pass_length=4;
+const int User::max_user_pass_length = 20;
+const int User::min_user_pass_length = 4;
 
 static Item_Interface Player(PLAYER_CHAR, 0, 0);
 static Item_Interface Door(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
@@ -199,14 +277,51 @@ void sleep_sec(float);
 void char_to_lower(char&);
 void read_max_level();
 void write_max_level(int& max_level);
+bool ask_yn(string question_with_enter = "") {
+	cout << question_with_enter;
+	char yn;
+	bool broken = false, result;
+	do {
+		cin >> yn;
+		char_to_lower(yn);
+		switch (yn)
+		{
+		case 'y':
+			result = true;
+			break;
+		case 'n':
+			result = false;
+			break;
+		default:
+			cout << "Please just enter y for yes or n for no:" << endl;
+			break;
+		}
+	} while (!broken);
+	return result;
+}
 //bool play_sound(LPCWSTR  path) {
 //	return PlaySound(path, NULL, SND_ASYNC | SND_FILENAME);
 //}
 int main() {
-	char yn = ' ',main_menu;
-	enum main_menu_items { New_Game=49, Load, Options,Credits, Exit };
+	cout << LOGO << endl;
+	cout << "Welcome to Covid 2030 game!\n";
+	if (ask_yn("Are you a new user?\n")) {
+		if (ask_yn("Would you like to sign up?\n")) {
+			User user;
+
+		}
+		else {
+			just_play = true;
+		}
+	}
+	else {
+
+	}
+
+	char yn = ' ', main_menu;
+	enum main_menu_items { New_Game = 49, Load, Options, Credits, Exit };
 	//srand(time(0));//srand(10);//quera
-	cout<< "1 - New Game\n"
+	cout << "1 - New Game\n"
 		<< "2 - Load\n"
 		<< "3 - Options\n"
 		<< "4 - Credits\n"
@@ -227,9 +342,11 @@ int main() {
 			char_to_lower(key);
 			round_num++;
 			//first_run = false;
-			enum keys { MV_UP,MV_DOWN,MV_RIGHT,MV_LEFT,
-						SH_UP, SH_DOWN, SH_RIGHT, SH_LEFT,
-						RELOAD_KEY,EXIT_KEY,UPGRADE_KEY,MENU_KEY};
+			enum keys {
+				MV_UP, MV_DOWN, MV_RIGHT, MV_LEFT,
+				SH_UP, SH_DOWN, SH_RIGHT, SH_LEFT,
+				RELOAD_KEY, EXIT_KEY, UPGRADE_KEY, MENU_KEY
+			};
 			switch (key) {
 			case 'w': case 'a': case 's': case 'd':
 				Player.get_coordinate().move(key, HEIGHT, WIDTH);//player
@@ -445,7 +562,7 @@ int main() {
 				base_menu();
 				break;
 			case 'm':
-				enum game_menu_items{ Return_to_game=48, New_Game,Save,Load,Options,Exit};
+				enum game_menu_items { Return_to_game = 48, New_Game, Save, Load, Options, Exit };
 				char game_menu;
 				bool broken = false;
 				cout << "0 - Return to game\n"
@@ -655,7 +772,7 @@ void base_menu() {
 			range_credit = range_gun + level,
 			health_credit = health * (level + 1);
 		char input_menu;
-		enum upgrade_menu_items { Return_to_game = 48, Upgrade_capacity_of_magazine, Upgrade_range_of_shotgun, Get_an_additional_health};
+		enum upgrade_menu_items { Return_to_game = 48, Upgrade_capacity_of_magazine, Upgrade_range_of_shotgun, Get_an_additional_health };
 		cout << "0 - Return to game" << endl
 			<< "1 - Upgrade capacity of magazine : 1 bullet (maximum is " << MAX_MAG_CAP << " bullets, now is " << magazine_capacity << ") , Credit required: " << mag_credit << endl
 			<< "2 - Upgrade range of shotgun : 1 times the size of the person himself (maximum is " << MAX_GUN_RANGE << " times, now is " << range_gun << ") , Credit required: " << range_credit << endl
@@ -680,7 +797,7 @@ void base_menu() {
 			cout << "Please just enter the numbers in the menu:" << endl;
 			break;
 		}
-		if(!broken)
+		if (!broken)
 			sleep_sec(2);
 	}
 }
