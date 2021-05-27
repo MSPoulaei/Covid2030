@@ -201,7 +201,7 @@ private:
 	string file_path;
 	int _level, _health, _ammo, _charged, _vaccine,
 		_kill, _range_gun, _credit, _round_num, _magazine_capacity,
-		_Width,_Height;
+		_Width, _Height;
 	bool _mute;
 	int _num_save;
 	//char keys[12];
@@ -309,7 +309,7 @@ private:
 	void Load_file() {
 		ifstream user_file(file_path, ios::in);
 		user_file >> password;
-		user_file >> _Width >> _Height>> _num_save;
+		user_file >> _Width >> _Height >> _num_save;
 		user_file >> _level >> _vaccine >> _credit >> _round_num;
 		user_file >> _health >> _ammo >> _charged >> _kill;
 		user_file >> _range_gun >> _magazine_capacity >> _mute;
@@ -400,7 +400,7 @@ public:
 		return false;
 	}
 	void Load() {
-		
+
 		Load_file();
 
 		level = _level;
@@ -462,59 +462,13 @@ void base_menu();
 void reset_values();
 void get_level_info_from_file(int);
 void Clear_scr();
-
 void char_to_lower(char&);
 void read_max_level();
 void write_max_level(int& max_level);
 void Credits_print();
-bool ask_yn(string question_with_enter = "") {
-	cout << question_with_enter;
-	char yn;
-	bool broken = false, result;
-	do {
-		cin >> yn;
-		char_to_lower(yn);
-		switch (yn)
-		{
-		case 'y':
-			result = true;
-			broken = true;
-			break;
-		case 'n':
-			result = false;
-			broken = true;
-			break;
-		default:
-			cout << "Please just enter y for yes or n for no:" << endl;
-			break;
-		}
-	} while (!broken);
-	return result;
-}
-void Register() {
-	bool passed_reg_stage = false;
-	user = User();
-	do {
-		if (ask_yn("Are you a new user?\n")) {
-			if (ask_yn("Would you like to sign up?\n")) {
-				passed_reg_stage = user.Sign_up();
-				just_play = !passed_reg_stage;
-			}
-			else {
-				just_play = true;
-				passed_reg_stage = true;
-			}
-		}
-		else {
-			passed_reg_stage = user.Login();
-			just_play = !passed_reg_stage;
-		}
-	} while (!passed_reg_stage);
-}
-
-//bool play_sound(LPCWSTR  path) {
-//	return PlaySound(path, NULL, SND_ASYNC | SND_FILENAME);
-//}
+bool ask_yn(string  = "");
+void Register();
+bool play_sound(LPCWSTR);
 int main() {
 	read_max_level();
 	cout << LOGO << endl;
@@ -526,7 +480,7 @@ int main() {
 		enum main_menu_items { Register_stage = 48, New_Game, Load, Settings, Credits, Exit };
 		//srand(time(0));//srand(10);//quera
 		Clear_scr();
-		cout<< "0 - Register\n"
+		cout << "0 - Register\n"
 			<< "1 - New Game\n"
 			<< "2 - Load\n"
 			<< "3 - Settings\n"
@@ -540,15 +494,15 @@ int main() {
 				Register();
 			break;
 		case Load:
-			if (!just_play){
-				if (user.get_num_save() != 1){
+			if (!just_play) {
+				if (user.get_num_save() != 1) {
 					user.Load();
 				}
 				else {
 					cout << "You have't saved yet" << endl;
 					break;
 				}
-				}
+			}
 			else {
 				cout << "You did't Log in!" << endl;
 				break;
@@ -565,7 +519,7 @@ int main() {
 				if (main_menu != Load)
 					round_num = 0;
 				while (game_is_on) {
-					
+
 					print_screen();
 					char key;
 					cin >> key;//key = getch();
@@ -586,7 +540,8 @@ int main() {
 						if (charged > 0) {
 							charged--;
 							//PlaySound(L"Assets/sound/gun shot.wav", NULL, SND_ASYNC | SND_FILENAME);
-							PlaySound(TEXT("Assets/sound/gun shot.wav"), NULL, SND_ASYNC | SND_FILENAME);
+							play_sound(L"Assets/sound/gun shot.wav");
+							//PlaySound(TEXT("Assets/sound/gun shot.wav"), NULL, SND_ASYNC | SND_FILENAME);
 							//LPCWSTR  a1 = L"Assets/sound/gun shot.wav";
 							//PlaySound((a1), NULL, SND_ASYNC | SND_FILENAME);
 							int index = -1;
@@ -759,7 +714,8 @@ int main() {
 						if (ammo > 0) {
 							if (charged < magazine_capacity) {
 								cout << "Reloaded!" << endl;
-								PlaySound(L"Assets/sound/reload.wav", NULL, SND_ASYNC | SND_FILENAME);
+								play_sound(L"Assets/sound/reload.wav");
+								//PlaySound(L"Assets/sound/reload.wav", NULL, SND_ASYNC | SND_FILENAME);
 								sleep_sec(1.5);
 								int need = magazine_capacity - charged;
 								if (need > ammo) {
@@ -778,7 +734,8 @@ int main() {
 						}
 						else {
 							cout << "No Ammo!" << endl;
-							PlaySound(L"Assets/sound/out-of-ammo-no-ammo.wav", NULL, SND_ASYNC | SND_FILENAME);
+							play_sound(L"Assets/sound/out-of-ammo-no-ammo.wav");
+							//PlaySound(L"Assets/sound/out-of-ammo-no-ammo.wav", NULL, SND_ASYNC | SND_FILENAME);
 							sleep_sec(1.5);
 						}
 						break;
@@ -904,7 +861,8 @@ int main() {
 							won = false;*/
 							health--;
 							print_screen();
-							PlaySound(L"Assets/sound/zombies-eating.wav", NULL, SND_ASYNC | SND_FILENAME);
+							play_sound(L"Assets/sound/zombies-eating.wav");
+							//PlaySound(L"Assets/sound/zombies-eating.wav", NULL, SND_ASYNC | SND_FILENAME);
 							cout << "The zombie is eating you! You lost one of your healths!" << endl;
 							sleep_sec(2);
 							if (health <= 0)
@@ -917,7 +875,8 @@ int main() {
 						won = false;
 						print_screen();
 						cout << "You Died!" << endl;
-						PlaySound(L"Assets/sound/evillaugh.wav", NULL, SND_ASYNC | SND_FILENAME);
+						play_sound(L"Assets/sound/evillaugh.wav");
+						//PlaySound(L"Assets/sound/evillaugh.wav", NULL, SND_ASYNC | SND_FILENAME);
 						//break;
 					}
 					//Door
@@ -926,13 +885,15 @@ int main() {
 							game_is_on = false;
 							won = true;
 							print_screen();
-							PlaySound(L"Assets/sound/mission-complete.wav", NULL, SND_ASYNC | SND_FILENAME);
+							play_sound(L"Assets/sound/mission-complete.wav");
+							//PlaySound(L"Assets/sound/mission-complete.wav", NULL, SND_ASYNC | SND_FILENAME);
 							//break;
 						}
 						else {
 							print_screen();
 							cout << "First get all the Vaccines." << endl;
-							PlaySound(L"Assets/sound/First Get all the Vaccines.wav", NULL, SND_ASYNC | SND_FILENAME);
+							play_sound(L"Assets/sound/First Get all the Vaccines.wav");
+							//PlaySound(L"Assets/sound/First Get all the Vaccines.wav", NULL, SND_ASYNC | SND_FILENAME);
 							sleep_sec(1.5);
 						}
 					}
@@ -946,7 +907,8 @@ int main() {
 								ammo++;
 								print_screen();
 								cout << "Ammo collected!" << endl;
-								PlaySound(L"Assets/sound/Ammo collected.wav", NULL, SND_ASYNC | SND_FILENAME);
+								play_sound(L"Assets/sound/Ammo collected.wav");
+								//PlaySound(L"Assets/sound/Ammo collected.wav", NULL, SND_ASYNC | SND_FILENAME);
 								sleep_sec(1.5);
 							}
 						}
@@ -960,7 +922,8 @@ int main() {
 								credit += credit_gained;
 								cout << "Vaccine collected!" << endl
 									<< credit_gained << " credit gained!" << endl;
-								PlaySound(L"Assets/sound/Vaccine collected.wav", NULL, SND_ASYNC | SND_FILENAME);
+								play_sound(L"Assets/sound/Vaccine collected.wav");
+								//PlaySound(L"Assets/sound/Vaccine collected.wav", NULL, SND_ASYNC | SND_FILENAME);
 								sleep_sec(1.5);
 							}
 
@@ -1029,10 +992,12 @@ int main() {
 	return 0;
 }
 void Exit_game() {
-	PlaySound(L"Assets/sound/dornandaz.wav", NULL, SND_ASYNC | SND_FILENAME);
+	play_sound(L"Assets/sound/dornandaz.wav");
+	//PlaySound(L"Assets/sound/dornandaz.wav", NULL, SND_ASYNC | SND_FILENAME);
 	cout << "Good Bye!" << endl;
-	sleep_sec(15);
-	exit(1);
+	if(!mute)
+		sleep_sec(15);
+	//exit(1);
 }
 void reset_values() {
 	level = 1;
@@ -1047,20 +1012,6 @@ void reset_values() {
 	magazine_capacity = 3;
 	mute = false;
 }
-//void reset_keys() {
-//	keys_chars[0] = 'w';
-//	keys_chars[1] = 'a';
-//	keys_chars[2] = 's';
-//	keys_chars[3] = 'd';
-//	keys_chars[4] = 't';
-//	keys_chars[5] = 'f';
-//	keys_chars[6] = 'g';
-//	keys_chars[7] = 'h';
-//	keys_chars[8] = 'r';
-//	keys_chars[9] = 'e';
-//	keys_chars[10] = 'u';
-//	keys_chars[11] = 'm';
-//}
 void Upgrade_item(const int& credit_needed, int& item, const int max_item, string item_text) {
 	if (item < max_item) {
 		if (credit >= credit_needed) {
@@ -1290,4 +1241,53 @@ void Settings_menu() {
 		mute = !mute;
 	else
 		;
+}
+bool play_sound(LPCWSTR  path) {
+	if (!mute)
+		return PlaySound(path, NULL, SND_ASYNC | SND_FILENAME);
+	return false;
+}
+bool ask_yn(string question_with_enter) {
+	cout << question_with_enter;
+	char yn;
+	bool broken = false, result;
+	do {
+		cin >> yn;
+		char_to_lower(yn);
+		switch (yn)
+		{
+		case 'y':
+			result = true;
+			broken = true;
+			break;
+		case 'n':
+			result = false;
+			broken = true;
+			break;
+		default:
+			cout << "Please just enter y for yes or n for no:" << endl;
+			break;
+		}
+	} while (!broken);
+	return result;
+}
+void Register() {
+	bool passed_reg_stage = false;
+	user = User();
+	do {
+		if (ask_yn("Are you a new user?\n")) {
+			if (ask_yn("Would you like to sign up?\n")) {
+				passed_reg_stage = user.Sign_up();
+				just_play = !passed_reg_stage;
+			}
+			else {
+				just_play = true;
+				passed_reg_stage = true;
+			}
+		}
+		else {
+			passed_reg_stage = user.Login();
+			just_play = !passed_reg_stage;
+		}
+	} while (!passed_reg_stage);
 }
