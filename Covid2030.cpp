@@ -58,16 +58,6 @@ round_num = 0, magazine_capacity = 3;
 //        perror("tcsetattr ~ICANON");
 //    return (buf);
 //}
-bool file_exist(string path) {
-	bool exist;
-	ifstream inFile(path, ios::in);
-	if (!inFile)
-		exist = false;
-	else
-		exist = true;
-	inFile.close();
-	return exist;
-}
 void sleep_sec(float);
 template<typename T>
 class Array {
@@ -335,6 +325,16 @@ private:
 		}
 		user_file.close();
 	}
+	static bool file_exist(string path) {
+		bool exist;
+		ifstream inFile(path, ios::in);
+		if (!inFile)
+			exist = false;
+		else
+			exist = true;
+		inFile.close();
+		return exist;
+	}
 public:
 	User() { _num_save = 0; }
 	~User() {}
@@ -466,7 +466,7 @@ void char_to_lower(char&);
 void read_max_level();
 void write_max_level(int& max_level);
 void Credits_print();
-bool ask_yn(string  = "");
+bool ask_yn(string = "");
 void Register();
 bool play_sound(LPCWSTR);
 int main() {
@@ -980,7 +980,7 @@ int main() {
 			Credits_print();
 			break;
 		case Exit:
-			if (ask_yn("Are you sure you want to exit the game?\nWarning: All unsaved data will be lost!\n")) {
+			if (ask_yn("Are you sure you want to exit the game?\n")) {
 				is_exit = true;
 				Exit_game();
 			}
@@ -995,7 +995,7 @@ void Exit_game() {
 	play_sound(L"Assets/sound/dornandaz.wav");
 	//PlaySound(L"Assets/sound/dornandaz.wav", NULL, SND_ASYNC | SND_FILENAME);
 	cout << "Good Bye!" << endl;
-	if(!mute)
+	if (!mute)
 		sleep_sec(15);
 	//exit(1);
 }
@@ -1010,7 +1010,6 @@ void reset_values() {
 	credit = 0;
 	round_num = 0;
 	magazine_capacity = 3;
-	mute = false;
 }
 void Upgrade_item(const int& credit_needed, int& item, const int max_item, string item_text) {
 	if (item < max_item) {
@@ -1243,10 +1242,25 @@ void Settings_menu() {
 		;
 }
 bool play_sound(LPCWSTR  path) {
-	if (!mute)
-		return PlaySound(path, NULL, SND_ASYNC | SND_FILENAME);
-	return false;
+	bool work_good = false;
+	if (!mute) {
+		if (PlaySound(path, NULL, SND_ASYNC | SND_FILENAME))
+			work_good = true;
+		else
+			cout << "file not found!" << endl;
+	}
+	return work_good;
 }
+//bool play_sound(const char  path[]) {
+//	bool work_good = false;
+//	if (!mute) {
+//		if (PlaySound(TEXT(path), NULL, SND_ASYNC | SND_FILENAME))
+//			work_good = true;
+//		else
+//			cout << "file not found!" << endl;
+//	}
+//	return work_good;
+//}
 bool ask_yn(string question_with_enter) {
 	cout << question_with_enter;
 	char yn;
