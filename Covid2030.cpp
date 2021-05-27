@@ -22,6 +22,15 @@
 #define MAX_MAG_CAP 7
 #define MAX_GUN_RANGE 10
 #define MAX_HEALTH 5
+#define RESET   "\033[0m"
+#define BLACK   "\033[30m"      /* Black */
+#define RED     "\033[31m"      /* Red */
+#define GREEN   "\033[32m"      /* Green */
+#define YELLOW  "\033[33m"      /* Yellow */
+#define BLUE    "\033[34m"      /* Blue */
+#define MAGENTA "\033[35m"      /* Magenta */
+#define CYAN    "\033[36m"      /* Cyan */
+#define WHITE   "\033[37m"      /* White */
 #define LOGO \
 " ######   #######  ##     ## #### ########      #######    #####    #######    #####   \n\
 ##    ## ##     ## ##     ##  ##  ##     ##    ##     ##  ##   ##  ##     ##  ##   ##  \n\
@@ -469,6 +478,8 @@ void Credits_print();
 bool ask_yn(string = "");
 void Register();
 bool play_sound(LPCWSTR);
+template<typename T1>
+void reset_value(T1&, T1);
 int main() {
 	read_max_level();
 	cout << LOGO << endl;
@@ -687,11 +698,12 @@ int main() {
 								credit += credit_gained;
 								cout << omg << endl
 									<< credit_gained << " credit gained!" << endl;
-
-								PlaySound(wcs, NULL, SND_ASYNC | SND_FILENAME);
+								play_sound(wcs);
+								//PlaySound(wcs, NULL, SND_ASYNC | SND_FILENAME);
 
 								sleep_sec(2);
-								PlaySound(L"Assets/sound/zombie-choking.wav", NULL, SND_ASYNC | SND_FILENAME);
+								play_sound(L"Assets/sound/zombie-choking.wav");
+								//PlaySound(L"Assets/sound/zombie-choking.wav", NULL, SND_ASYNC | SND_FILENAME);
 							}
 							else if (not_in_range) {
 								cout << "Zombie is not in range! come closer." << endl;
@@ -704,7 +716,8 @@ int main() {
 							///moshkel
 							/// </summary>
 							/// <returns></returns>
-							PlaySound(L"Assets/sound/out-of-ammo-no-ammo.wav", NULL, SND_ASYNC | SND_FILENAME);
+							play_sound(L"Assets/sound/out-of-ammo-no-ammo.wav");
+							//PlaySound(L"Assets/sound/out-of-ammo-no-ammo.wav", NULL, SND_ASYNC | SND_FILENAME);
 							sleep_sec(1.5);
 						}
 						break;
@@ -999,17 +1012,33 @@ void Exit_game() {
 		sleep_sec(15);
 	//exit(1);
 }
+//void reset_values() {
+//	level = 1;
+//	vaccine = 0;
+//	health = 3;
+//	ammo = 0;
+//	charged = 3;
+//	kill = 0;
+//	range_gun = 5;
+//	credit = 0;
+//	round_num = 0;
+//	magazine_capacity = 3;
+//}
+template<typename T1>
+void reset_value(T1& name, T1 value) {
+	name = value;
+}
 void reset_values() {
-	level = 1;
-	vaccine = 0;
-	health = 3;
-	ammo = 0;
-	charged = 3;
-	kill = 0;
-	range_gun = 5;
-	credit = 0;
-	round_num = 0;
-	magazine_capacity = 3;
+	reset_value(level, 1);
+	reset_value(vaccine, 0);
+	reset_value(health, 3);
+	reset_value(ammo, 0);
+	reset_value(charged, 3);
+	reset_value(kill, 0);
+	reset_value(range_gun, 5);
+	reset_value(credit, 0);
+	reset_value(round_num, 0);
+	reset_value(magazine_capacity, 3);
 }
 void Upgrade_item(const int& credit_needed, int& item, const int max_item, string item_text) {
 	if (item < max_item) {
@@ -1080,6 +1109,7 @@ void print_screen() {
 	Clear_scr();
 	/*if(!first_run)
 		cout << "\033[2J\033[1;1H";*/
+
 	print_score_board();
 	for (int i = 0; i < WIDTH + 2; ++i)
 		cout << '-';
@@ -1089,18 +1119,18 @@ void print_screen() {
 		cout << '|';
 		for (int j = 0; j < WIDTH; ++j) {
 			if (Player.get_coordinate().Xcor == j && Player.get_coordinate().Ycor == i) {
-				cout << Player.get_pic();
+				cout <<GREEN << Player.get_pic()<<RESET;
 				continue;
 			}
 			else if (Door.get_coordinate().Xcor == j && Door.get_coordinate().Ycor == i) {
-				cout << Door.get_pic();
+				cout << MAGENTA << Door.get_pic() << RESET;
 				continue;
 			}
 			bool broken = false;
 			for (int a = 0; a < Item_Interface::Zombies.size(); a++)
 			{
 				if (Item_Interface::Zombies[a].get_coordinate().Xcor == j && Item_Interface::Zombies[a].get_coordinate().Ycor == i) {
-					cout << Item_Interface::Zombies[a].get_pic();
+					cout<< RED << Item_Interface::Zombies[a].get_pic()<<RESET;
 					broken = true;
 					break;
 				}
@@ -1111,7 +1141,7 @@ void print_screen() {
 			{
 
 				if (Item_Interface::Vaccines[c].get_coordinate().Xcor == j && Item_Interface::Vaccines[c].get_coordinate().Ycor == i) {
-					cout << Item_Interface::Vaccines[c].get_pic();
+					cout<<YELLOW << Item_Interface::Vaccines[c].get_pic()<<RESET;
 					broken = true;
 					break;
 				}
@@ -1123,7 +1153,8 @@ void print_screen() {
 			{
 
 				if (Item_Interface::Ammunition[c].get_coordinate().Xcor == j && Item_Interface::Ammunition[c].get_coordinate().Ycor == i) {
-					cout << Item_Interface::Ammunition[c].get_pic();
+					
+					cout<<BLUE << Item_Interface::Ammunition[c].get_pic()<<RESET;
 					broken = true;
 					break;
 				}
