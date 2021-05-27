@@ -68,6 +68,7 @@ bool file_exist(string path) {
 	inFile.close();
 	return exist;
 }
+void sleep_sec(float);
 template<typename T>
 class Array {
 private:
@@ -146,7 +147,7 @@ private:
 public:
 	Item() {}
 	~Item() { delete this; }
-	Item(char pic, int Xcor = rand() % (WIDTH - 5) + 5, int Ycor = rand() % (HEIGHT - 5) + 5)
+	Item(char pic, int Xcor, int Ycor)
 		:coordinate(Xcor, Ycor) {
 		this->pic = pic;
 	}
@@ -199,8 +200,10 @@ private:
 	string password;
 	string file_path;
 	int _level, _health, _ammo, _charged, _vaccine,
-		_kill, _range_gun, _credit, _round_num, _magazine_capacity;
+		_kill, _range_gun, _credit, _round_num, _magazine_capacity,
+		_Width,_Height;
 	bool _mute;
+	int _num_save;
 	//char keys[12];
 	static const int max_user_pass_length;
 	static const int min_user_pass_length;
@@ -289,6 +292,7 @@ private:
 		//string address = "Assets/users/" + user_name + ".txt";
 		ofstream user_file(file_path, ios::out);
 		user_file << password << endl;
+		user_file << _Width << " " << _Height << " " << _num_save << endl;
 		user_file << _level << " " << _vaccine << " " << _credit << " " << _round_num << endl;
 		user_file << _health << " " << _ammo << " " << _charged << " " << _kill << endl;
 		user_file << _range_gun << " " << _magazine_capacity << " " << _mute << endl;
@@ -302,8 +306,37 @@ private:
 			user_file << _Ammunition[i].get_coordinate().get_Xcor() << " " << _Ammunition[i].get_coordinate().get_Ycor() << endl;
 		user_file.close();
 	}
+	void Load_file() {
+		ifstream user_file(file_path, ios::in);
+		user_file >> password;
+		user_file >> _Width >> _Height>> _num_save;
+		user_file >> _level >> _vaccine >> _credit >> _round_num;
+		user_file >> _health >> _ammo >> _charged >> _kill;
+		user_file >> _range_gun >> _magazine_capacity >> _mute;
+		mute = _mute;
+		int x, y;
+		user_file >> x >> y;
+		Player = Item_Interface(PLAYER_CHAR, x, y);
+		Door = Item_Interface(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
+		int zombie_size, vaccine_size, ammunition_size;
+		user_file >> zombie_size >> vaccine_size >> ammunition_size;
+		Item_Interface::Zombies.clear(); Item_Interface::Vaccines.clear(); Item_Interface::Ammunition.clear();
+		for (int i = 0; i < zombie_size; i++) {
+			user_file >> x >> y;
+			Item_Interface::Zombies.push_back(Item_Interface(ZOMBIE_CHAR, x, y));
+		}
+		for (int i = 0; i < vaccine_size; i++) {
+			user_file >> x >> y;
+			Item_Interface::Vaccines.push_back(Item_Interface(VACCINE_CHAR, x, y));
+		}
+		for (int i = 0; i < ammunition_size; i++) {
+			user_file >> x >> y;
+			Item_Interface::Ammunition.push_back(Item_Interface(AMMO_CHAR, x, y));
+		}
+		user_file.close();
+	}
 public:
-	User() {}
+	User() { _num_save = 0; }
 	~User() {}
 	bool Sign_up() {
 		cout << "(notes: username or password should contain at least " << min_user_pass_length
@@ -326,6 +359,7 @@ public:
 		//reset_values();
 		Save();
 		cout << "User with username:" << user_name << " and password:" << password << " has been registered successfully" << endl;
+		sleep_sec(2);
 		return true;
 	}
 	bool Login() {
@@ -347,34 +381,7 @@ public:
 		/*ifstream user_file(file_path, ios::in);
 		user_file.read(reinterpret_cast<char*>(&(*this)), sizeof((*this)));
 		user_file.close();*/
-		ifstream user_file(file_path, ios::in);
-		user_file >> password;
-		user_file >> _level >> _vaccine >> _credit >> _round_num;
-		user_file >> _health >> _ammo >> _charged >> _kill;
-		int mute;
-		user_file >> _range_gun >> _magazine_capacity >> mute;
-		_mute = false;
-		if (mute)    _mute = true;
-		int x, y;
-		user_file >> x >> y;
-		_Player = Item_Interface(PLAYER_CHAR, x, y);
-		_Door = Item_Interface(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
-		int zombie_size, vaccine_size, ammunition_size;
-		user_file >> zombie_size >> vaccine_size >> ammunition_size;
-		_Zombies.clear(); _Vaccines.clear(); _Ammunition.clear();
-		for (int i = 0; i < zombie_size; i++) {
-			user_file >> x >> y;
-			_Zombies.push_back(Item_Interface(ZOMBIE_CHAR, x, y));
-		}
-		for (int i = 0; i < vaccine_size; i++) {
-			user_file >> x >> y;
-			_Vaccines.push_back(Item_Interface(VACCINE_CHAR, x, y));
-		}
-		for (int i = 0; i < ammunition_size; i++) {
-			user_file >> x >> y;
-			_Ammunition.push_back(Item_Interface(AMMO_CHAR, x, y));
-		}
-		user_file.close();
+		Load_file();
 
 		cout << "Enter your password:" << endl;
 		do {
@@ -384,13 +391,18 @@ public:
 			cout << "password is correct" << endl
 				<< "All your data is loaded!" << endl;
 			//Load();
+			sleep_sec(2);
 			return true;
 		}
 		else
 			cout << "password is incorrect" << endl;
+		sleep_sec(2);
 		return false;
 	}
 	void Load() {
+		
+		Load_file();
+
 		level = _level;
 		health = _health;
 		ammo = _ammo;
@@ -401,12 +413,13 @@ public:
 		credit = _credit;
 		round_num = _round_num;
 		magazine_capacity = _magazine_capacity;
-
-		Player = _Player;
-		Door = _Door;
-		Item_Interface::Zombies = _Zombies;
-		Item_Interface::Vaccines = _Vaccines;
-		Item_Interface::Ammunition = _Ammunition;
+		WIDTH = _Width;
+		HEIGHT = _Height;
+		//Player = _Player;
+		//Door = _Door;
+		//Item_Interface::Zombies = _Zombies;
+		//Item_Interface::Vaccines = _Vaccines;
+		//Item_Interface::Ammunition = _Ammunition;
 	}
 	void Save() {
 		_level = level;
@@ -419,6 +432,10 @@ public:
 		_credit = credit;
 		_round_num = round_num;
 		_magazine_capacity = magazine_capacity;
+		_mute = mute;
+		_Width = WIDTH;
+		_Height = HEIGHT;
+		_num_save++;
 
 		_Player = Player;
 		_Door = Door;
@@ -427,7 +444,7 @@ public:
 		_Ammunition = Item_Interface::Ammunition;
 		Save_file();
 	}
-
+	int get_num_save() { return _num_save; }
 };
 
 const int User::max_user_pass_length = 20;
@@ -435,24 +452,7 @@ const int User::min_user_pass_length = 4;
 User user;
 
 
-//string Login_user_name() {
-//	string user_name;
-//	cout << "(notes: username or password should contain at least " << User::min_user_pass_length
-//		<< " and at most" << User::max_user_pass_length
-//		<< "characters, legal chars for username {a-z,A-Z,0-9} space is illegal, " << endl
-//		<< "legal chars for password {a-z,A-Z,0-9,@#$%^&*()_+=-,} space is illegal and it should't contain only numbers)" << endl;
-//	cout << "Enter your User Name:" << endl;
-//	do {
-//		cin >> user_name;
-//	} while (!User::check_user_name(user_name));
-//	string file_path = "Assets/users/" + user_name + ".bin";
-//	if (!file_exist(file_path)) {
-//		cout << "User name not found! please sign up!" << endl;
-//		return "";
-//	}
-//	return file_path;
-//}
-//void reset_keys();
+void Settings_menu();
 void Reset_game();
 void Exit_game();
 void print_screen();
@@ -462,7 +462,7 @@ void base_menu();
 void reset_values();
 void get_level_info_from_file(int);
 void Clear_scr();
-void sleep_sec(float);
+
 void char_to_lower(char&);
 void read_max_level();
 void write_max_level(int& max_level);
@@ -516,7 +516,7 @@ void Register() {
 //	return PlaySound(path, NULL, SND_ASYNC | SND_FILENAME);
 //}
 int main() {
-
+	read_max_level();
 	cout << LOGO << endl;
 	cout << "Welcome to Covid 2030 game!\n";
 	Register();
@@ -526,7 +526,7 @@ int main() {
 		enum main_menu_items { Register_stage = 48, New_Game, Load, Settings, Credits, Exit };
 		//srand(time(0));//srand(10);//quera
 		Clear_scr();
-		cout << "0 - Register\n"
+		cout<< "0 - Register\n"
 			<< "1 - New Game\n"
 			<< "2 - Load\n"
 			<< "3 - Settings\n"
@@ -540,8 +540,15 @@ int main() {
 				Register();
 			break;
 		case Load:
-			if (!just_play)
-				user.Load();
+			if (!just_play){
+				if (user.get_num_save() != 1){
+					user.Load();
+				}
+				else {
+					cout << "You have't saved yet" << endl;
+					break;
+				}
+				}
 			else {
 				cout << "You did't Log in!" << endl;
 				break;
@@ -551,15 +558,14 @@ int main() {
 				reset_values();
 			//while bazi
 			while (true) {
-
-				read_max_level();
 				if (main_menu != Load)
 					get_level_info_from_file(level);
 
-				bool game_is_on = true, won = false;
+				bool game_is_on = true, won = false, load_triggered = false;
 				if (main_menu != Load)
 					round_num = 0;
 				while (game_is_on) {
+					
 					print_screen();
 					char key;
 					cin >> key;//key = getch();
@@ -789,14 +795,14 @@ int main() {
 						base_menu();
 						break;
 					case MENU_KEY: {
-						enum game_menu_items { Return_to_game = 48, New_Game, Save, Load, Options, Exit };
+						enum game_menu_items { Return_to_game = 48, New_Game_inner_menu, Save, Load_inner_menu, Settings, Exit };
 						char game_menu;
 						bool broken;
 						cout << "0 - Return to game\n"
 							<< "1 - New Game\n"
 							<< "2 - Save\n"
 							<< "3 - Load\n"
-							<< "4 - Options\n"
+							<< "4 - Settings\n"
 							<< "5 - Exit" << endl;
 						do {
 							broken = true;
@@ -805,24 +811,37 @@ int main() {
 							{
 							case Return_to_game:
 								break;
-							case Load:
-								if (!just_play)
-									user.Load();
+							case Load_inner_menu:
+								if (!just_play) {
+									if (user.get_num_save() != 1) {
+										user.Load();
+										main_menu = Load;
+										game_is_on = false;
+										load_triggered = true;
+									}
+									else {
+										cout << "You haven't saved yet!" << endl;
+									}
+								}
 								else {
 									cout << "You did't Log in!" << endl;
-									break;
 								}
-							case New_Game:
-								if (game_menu != Load)
-									Reset_game();
+								break;
+							case New_Game_inner_menu:
+								Reset_game();
+								main_menu = New_Game;
+								game_is_on = false;
 								break;
 							case Save:
 								if (!just_play)
 									user.Save();
 								else {
 									cout << "You did't Log in!" << endl;
-									break;
+									sleep_sec(1.5);
 								}
+								break;
+							case Settings:
+								Settings_menu();
 								break;
 							case Exit:
 								game_is_on = false;
@@ -948,39 +967,42 @@ int main() {
 						}
 					}
 				}
-				if (won) {
-					level++;
-					if (level != END_LEVEL + 1) {
-						int credit_gained = level;
-						credit += credit_gained;
-						cout << "Well Done! You have reached level " << level << endl
-							<< credit_gained << " credit gained!" << endl;
-						sleep_sec(1.5);
-					}
-					else if (level == END_LEVEL + 1) {
-						cout << "Congratulations! You have successfully collected all the Vaccines! Now it is time to return to the Earth" << endl;
-						cout << "Good Bye!" << endl;
-						break;
-					}
-				}
-				else {
-					if (yn != 'n')
-						cout << "You Lose! Would you like to try again?(y/n)" << endl;
-					//char yn;
-					while (yn != 'n') {
-						cin >> yn;
-						if (yn == 'y' || yn == 'n')
+				if (!load_triggered) {
+					if (won) {
+						main_menu = New_Game;
+						level++;
+						if (level != END_LEVEL + 1) {
+							int credit_gained = level;
+							credit += credit_gained;
+							cout << "Well Done! You have reached level " << level << endl
+								<< credit_gained << " credit gained!" << endl;
+							sleep_sec(1.5);
+						}
+						else if (level == END_LEVEL + 1) {
+							cout << "Congratulations! You have successfully collected all the Vaccines! Now it is time to return to the Earth" << endl;
+							cout << "Good Bye!" << endl;
 							break;
-						cout << "Please just enter y for yes or n for no:" << endl;
+						}
 					}
-					if (yn == 'y') {
-						cout << "The game will restart in 5 seconds" << endl;
-						reset_values();
-						sleep_sec(5);
-					}
-					else if (yn == 'n') {
-						//Exit_game();
-						break;
+					else {
+						if (yn != 'n')
+							cout << "You Lose! Would you like to try again?(y/n)" << endl;
+						//char yn;
+						while (yn != 'n') {
+							cin >> yn;
+							if (yn == 'y' || yn == 'n')
+								break;
+							cout << "Please just enter y for yes or n for no:" << endl;
+						}
+						if (yn == 'y') {
+							cout << "The game will restart in 5 seconds" << endl;
+							reset_values();
+							sleep_sec(5);
+						}
+						else if (yn == 'n') {
+							//Exit_game();
+							break;
+						}
 					}
 				}
 				/*Zombies.clear();
@@ -989,7 +1011,7 @@ int main() {
 			}
 			break;
 		case Settings:
-
+			Settings_menu();
 			break;
 		case Credits:
 			Credits_print();
@@ -1260,4 +1282,12 @@ void Reset_game() {
 	reset_values();
 	read_max_level();
 	get_level_info_from_file(level);
+}
+void Settings_menu() {
+	cout << "Final level is: " << END_LEVEL << endl;
+	cout << ((mute) ? "Sound is mute!" : "Sound is not mute!") << endl;
+	if (ask_yn(((mute) ? "Do you want to unmute the sound?\n" : "Do you want to mute the sound?\n")))
+		mute = !mute;
+	else
+		;
 }
