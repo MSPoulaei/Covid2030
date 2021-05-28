@@ -1,12 +1,12 @@
 ﻿#include <iostream>
-#include <fstream>
-#include <ctime>
+#include <fstream>//for save/load
+#include <ctime>//for sleep_sec(time)
 #include <vector>
-#include <Windows.h>
-#include <string>
-#include <MMSystem.h>
-#include <algorithm>
-#include <wchar.h>
+#include <Windows.h>//for play_sound
+#include <MMSystem.h>//for play_sound
+#include <algorithm>//for finding the nearest zombie to kill
+//#include <string>
+//#include <wchar.h>
 
 //CONSTANTS
 #define PLAYER_CHAR 'P'
