@@ -1,6 +1,10 @@
 #include "Utilities.h"
 
-
+bool just_play = false, is_exit = false, mute = false;
+int WIDTH = 15, HEIGHT = 15, END_LEVEL = 20,
+level = 1, health = 3, ammo = 0, charged = 3,
+vaccine = 0, kill = 0, range_gun = 5, credit = 0,
+round_num = 0, magazine_capacity = 3;
 
 void Exit_game() {
 	play_sound(L"Assets/sound/dornandaz.wav");

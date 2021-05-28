@@ -804,6 +804,7 @@ int main() {
 							case New_Game_inner_menu:
 								Reset_game();
 								main_menu = New_Game;
+								load_triggered = true;
 								game_is_on = false;
 								break;
 							case Save:

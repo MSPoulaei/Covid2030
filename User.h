@@ -37,7 +37,7 @@ public:
 	void Save();
 	int get_num_save();
 };
-User user;
+extern User user;
 void Register();
 void Settings_menu();
 void Reset_game();

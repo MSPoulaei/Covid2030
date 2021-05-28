@@ -18,6 +18,8 @@ bool Item_Interface::operator==(Item_Interface& item2) {
 Array<Item_Interface> Item_Interface::Zombies;
 Array<Item_Interface> Item_Interface::Vaccines;
 Array<Item_Interface> Item_Interface::Ammunition;
+ Item_Interface Player(PLAYER_CHAR, 0, 0);
+ Item_Interface Door(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
 void get_level_info_from_file(int level)
 {
 	//clear last items

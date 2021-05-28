@@ -37,9 +37,9 @@ using namespace std;
 ##    ## ##     ##   ## ##    ##  ##     ##    ##         ##   ##  ##     ##  ##   ##  \n\
 ######   #######     ###    #### ########     #########   #####    #######    #####   "
 
-bool just_play, is_exit, mute;
-int WIDTH , HEIGHT, END_LEVEL;
-int level , health , ammo , charged,
+extern bool just_play, is_exit, mute;
+extern int WIDTH , HEIGHT, END_LEVEL,
+level , health , ammo , charged,
 vaccine , kill , range_gun , credit,
 round_num , magazine_capacity;
 void sleep_sec(float);

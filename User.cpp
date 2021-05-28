@@ -254,6 +254,8 @@ void Register() {
 		}
 	} while (!passed_reg_stage);
 }
+
+User user;
 void Settings_menu() {
 	cout << "Final level is: " << END_LEVEL << endl;
 	cout << ((mute) ? "Sound is mute!" : "Sound is not mute!") << endl;

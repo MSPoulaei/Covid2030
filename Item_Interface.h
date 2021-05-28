@@ -23,8 +23,8 @@ public:
 private:
 	Item* ptr;
 };
-static Item_Interface Player(PLAYER_CHAR, 0, 0);
-static Item_Interface Door(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
+ extern Item_Interface Player;
+ extern Item_Interface Door;
 void print_screen();
 void get_level_info_from_file(int);
 #endif
