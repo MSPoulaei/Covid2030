@@ -1,18 +1,14 @@
 ﻿#include <iostream>
 #include <fstream>
-//#include <stdlib.h>
 #include <ctime>
-//#include <cstdlib>
-//#include <stdlib.h>
 #include <vector>
 #include <Windows.h>
 #include <string>
 #include <MMSystem.h>
 #include <algorithm>
 #include <wchar.h>
-//#define WIDTH 30
-//#define HEIGHT 30
 
+//CONSTANTS
 #define PLAYER_CHAR 'P'
 #define ZOMBIE_CHAR 'Z'
 #define VACCINE_CHAR 'V'
@@ -22,6 +18,7 @@
 #define MAX_MAG_CAP 7
 #define MAX_GUN_RANGE 10
 #define MAX_HEALTH 5
+//ANSI CODES
 #define RESET   "\033[0m"
 #define BLACK   "\033[30m"      /* Black */
 #define RED     "\033[31m"      /* Red */
@@ -31,8 +28,8 @@
 #define MAGENTA "\033[35m"      /* Magenta */
 #define CYAN    "\033[36m"      /* Cyan */
 #define WHITE   "\033[37m"      /* White */
-#define LOGO \
-" ######   #######  ##     ## #### ########      #######    #####    #######    #####   \n\
+#define LOGO "\
+######   #######  ##     ## #### ########      #######    #####    #######    #####   \n\
 ##    ## ##     ## ##     ##  ##  ##     ##    ##     ##  ##   ##  ##     ##  ##   ##  \n\
 ##       ##     ## ##     ##  ##  ##     ##           ## ##     ##        ## ##     ## \n\
 ##       ##     ## ##     ##  ##  ##     ##     #######  ##     ##  #######  ##     ## \n\
@@ -316,7 +313,7 @@ private:
 		int x, y;
 		user_file >> x >> y;
 		Player = Item_Interface(PLAYER_CHAR, x, y);
-		Door = Item_Interface(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
+		Door = Item_Interface(DOOR_CHAR, _Width - 1, _Height - 1);
 		int zombie_size, vaccine_size, ammunition_size;
 		user_file >> zombie_size >> vaccine_size >> ammunition_size;
 		Item_Interface::Zombies.clear(); Item_Interface::Vaccines.clear(); Item_Interface::Ammunition.clear();
@@ -390,8 +387,8 @@ public:
 		/*ifstream user_file(file_path, ios::in);
 		user_file.read(reinterpret_cast<char*>(&(*this)), sizeof((*this)));
 		user_file.close();*/
-		Load_file();
-
+		//Load_file();
+		Load();
 		cout << "Enter your password:" << endl;
 		do {
 			cin >> password_input;
@@ -424,6 +421,7 @@ public:
 		magazine_capacity = _magazine_capacity;
 		WIDTH = _Width;
 		HEIGHT = _Height;
+		mute = _mute;
 		//Player = _Player;
 		//Door = _Door;
 		//Item_Interface::Zombies = _Zombies;
@@ -482,7 +480,7 @@ template<typename T1>
 void reset_value(T1&, T1);
 int main() {
 	read_max_level();
-	cout << LOGO << endl;
+	cout <<RED<< LOGO <<RESET<< endl;
 	cout << "Welcome to Covid 2030 game!\n";
 	Register();
 
@@ -491,12 +489,12 @@ int main() {
 		enum main_menu_items { Register_stage = 48, New_Game, Load, Settings, Credits, Exit };
 		//srand(time(0));//srand(10);//quera
 		Clear_scr();
-		cout << "0 - Register\n"
+		cout <<YELLOW<< "0 - Register\n"
 			<< "1 - New Game\n"
 			<< "2 - Load\n"
 			<< "3 - Settings\n"
 			<< "4 - Credits\n"
-			<< "5 - Exit" << endl;
+			<< "5 - Exit" <<RESET<< endl;
 		cin >> main_menu;
 		switch (main_menu)
 		{
@@ -508,14 +506,18 @@ int main() {
 			if (!just_play) {
 				if (user.get_num_save() != 1) {
 					user.Load();
+					cout << "All your data is loaded!" << endl;
+					sleep_sec(2);
 				}
 				else {
 					cout << "You have't saved yet" << endl;
+					sleep_sec(2);
 					break;
 				}
 			}
 			else {
 				cout << "You did't Log in!" << endl;
+				sleep_sec(2);
 				break;
 			}
 		case New_Game:
@@ -768,12 +770,12 @@ int main() {
 						enum game_menu_items { Return_to_game = 48, New_Game_inner_menu, Save, Load_inner_menu, Settings, Exit };
 						char game_menu;
 						bool broken;
-						cout << "0 - Return to game\n"
+						cout<< YELLOW << "0 - Return to game\n"
 							<< "1 - New Game\n"
 							<< "2 - Save\n"
 							<< "3 - Load\n"
 							<< "4 - Settings\n"
-							<< "5 - Exit" << endl;
+							<< "5 - Exit"<<RESET << endl;
 						do {
 							broken = true;
 							cin >> game_menu;
@@ -788,6 +790,7 @@ int main() {
 										main_menu = Load;
 										game_is_on = false;
 										load_triggered = true;
+										cout << "All your data is loaded!" << endl;
 									}
 									else {
 										cout << "You haven't saved yet!" << endl;
@@ -796,6 +799,7 @@ int main() {
 								else {
 									cout << "You did't Log in!" << endl;
 								}
+								sleep_sec(2);
 								break;
 							case New_Game_inner_menu:
 								Reset_game();
@@ -972,7 +976,7 @@ int main() {
 						}
 						if (yn == 'y') {
 							cout << "The game will restart in 5 seconds" << endl;
-							reset_values();
+							Reset_game();
 							sleep_sec(5);
 						}
 						else if (yn == 'n') {
@@ -1119,7 +1123,7 @@ void print_screen() {
 		cout << '|';
 		for (int j = 0; j < WIDTH; ++j) {
 			if (Player.get_coordinate().Xcor == j && Player.get_coordinate().Ycor == i) {
-				cout <<GREEN << Player.get_pic()<<RESET;
+				cout << GREEN << Player.get_pic() << RESET;
 				continue;
 			}
 			else if (Door.get_coordinate().Xcor == j && Door.get_coordinate().Ycor == i) {
@@ -1130,7 +1134,7 @@ void print_screen() {
 			for (int a = 0; a < Item_Interface::Zombies.size(); a++)
 			{
 				if (Item_Interface::Zombies[a].get_coordinate().Xcor == j && Item_Interface::Zombies[a].get_coordinate().Ycor == i) {
-					cout<< RED << Item_Interface::Zombies[a].get_pic()<<RESET;
+					cout << RED << Item_Interface::Zombies[a].get_pic() << RESET;
 					broken = true;
 					break;
 				}
@@ -1141,7 +1145,7 @@ void print_screen() {
 			{
 
 				if (Item_Interface::Vaccines[c].get_coordinate().Xcor == j && Item_Interface::Vaccines[c].get_coordinate().Ycor == i) {
-					cout<<YELLOW << Item_Interface::Vaccines[c].get_pic()<<RESET;
+					cout << YELLOW << Item_Interface::Vaccines[c].get_pic() << RESET;
 					broken = true;
 					break;
 				}
@@ -1153,8 +1157,8 @@ void print_screen() {
 			{
 
 				if (Item_Interface::Ammunition[c].get_coordinate().Xcor == j && Item_Interface::Ammunition[c].get_coordinate().Ycor == i) {
-					
-					cout<<BLUE << Item_Interface::Ammunition[c].get_pic()<<RESET;
+
+					cout << BLUE << Item_Interface::Ammunition[c].get_pic() << RESET;
 					broken = true;
 					break;
 				}
@@ -1267,8 +1271,12 @@ void Reset_game() {
 void Settings_menu() {
 	cout << "Final level is: " << END_LEVEL << endl;
 	cout << ((mute) ? "Sound is mute!" : "Sound is not mute!") << endl;
-	if (ask_yn(((mute) ? "Do you want to unmute the sound?\n" : "Do you want to mute the sound?\n")))
+	if (ask_yn(((mute) ? "Do you want to unmute the sound?\n" : "Do you want to mute the sound?\n"))) {
 		mute = !mute;
+		if (!just_play && ask_yn("Are you sure you want to save current stage?"))
+			user.Save();
+	}
+
 	else
 		;
 }
