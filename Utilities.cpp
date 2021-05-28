@@ -1,6 +1,6 @@
 #include "Utilities.h"
-#include "User.h"
-using namespace std;
+
+
 
 void Exit_game() {
 	play_sound(L"Assets/sound/dornandaz.wav");
@@ -88,74 +88,7 @@ void print_score_board() {
 	cout << "Ammo: " << charged << '/' << ammo << " Kill: " << kill << endl; ;
 
 }
-void print_screen() {
-	//if(round!=0)
-	//cout << "a" << endl;//
-	//system("cls");
-	Clear_scr();
-	/*if(!first_run)
-		cout << "\033[2J\033[1;1H";*/
 
-	print_score_board();
-	for (int i = 0; i < WIDTH + 2; ++i)
-		cout << '-';
-	cout << endl;
-	//
-	for (int i = 0; i < HEIGHT; ++i) {//print row
-		cout << '|';
-		for (int j = 0; j < WIDTH; ++j) {
-			if (Player.get_coordinate().Xcor == j && Player.get_coordinate().Ycor == i) {
-				cout << GREEN << Player.get_pic() << RESET;
-				continue;
-			}
-			else if (Door.get_coordinate().Xcor == j && Door.get_coordinate().Ycor == i) {
-				cout << MAGENTA << Door.get_pic() << RESET;
-				continue;
-			}
-			bool broken = false;
-			for (int a = 0; a < Item_Interface::Zombies.size(); a++)
-			{
-				if (Item_Interface::Zombies[a].get_coordinate().Xcor == j && Item_Interface::Zombies[a].get_coordinate().Ycor == i) {
-					cout << RED << Item_Interface::Zombies[a].get_pic() << RESET;
-					broken = true;
-					break;
-				}
-			}
-			if (broken)
-				continue;
-			for (int c = 0; c < Item_Interface::Vaccines.size(); c++)
-			{
-
-				if (Item_Interface::Vaccines[c].get_coordinate().Xcor == j && Item_Interface::Vaccines[c].get_coordinate().Ycor == i) {
-					cout << YELLOW << Item_Interface::Vaccines[c].get_pic() << RESET;
-					broken = true;
-					break;
-				}
-
-			}
-			if (broken)
-				continue;
-			for (int c = 0; c < Item_Interface::Ammunition.size(); c++)
-			{
-
-				if (Item_Interface::Ammunition[c].get_coordinate().Xcor == j && Item_Interface::Ammunition[c].get_coordinate().Ycor == i) {
-
-					cout << BLUE << Item_Interface::Ammunition[c].get_pic() << RESET;
-					broken = true;
-					break;
-				}
-
-			}
-			if (broken)
-				continue;
-			cout << EMPTY_CHAR;
-		}
-		cout << '|' << endl;
-	}
-	for (int i = 0; i < WIDTH + 2; ++i)
-		cout << '-';
-	cout << endl;
-}
 void Clear_scr()
 {
 #if defined _WIN32
@@ -180,40 +113,7 @@ void char_to_lower(char& character) {
 		character -= ('A' - 'a');
 	return;
 }
-void get_level_info_from_file(int level)
-{
-	//clear last items
-	Item_Interface::Zombies.clear();
-	Item_Interface::Vaccines.clear();
-	Item_Interface::Ammunition.clear();
 
-	string p1 = "Assets/levels/file_level_"; p1 += char(level + 48); string address = p1 + ".txt";
-	ifstream infile(address, ios::in);
-	if (!infile) {
-		cerr << "file not found!" << endl;
-		exit(1);
-	}
-	infile >> WIDTH >> HEIGHT;
-	int x, y;
-	for (int i = 0; i < level; i++) {
-		infile >> x >> y;
-		Item_Interface::Zombies.push_back(Item_Interface(ZOMBIE_CHAR, x, y));
-	}
-	for (int i = 0; i < level; i++) {
-		infile >> x >> y;
-		Item_Interface::Vaccines.push_back(Item_Interface(VACCINE_CHAR, x, y));
-	}
-	for (int i = 0; i < level; i++) {
-		if (i % 2 == 1)
-			continue;
-		infile >> x >> y;
-		Item_Interface::Ammunition.push_back(Item_Interface(AMMO_CHAR, x, y));
-	}
-	infile.close();
-	//reset Player and door position
-	Player.get_coordinate().goto_cordnate(0, 0);
-	Door.get_coordinate().goto_cordnate(WIDTH - 1, HEIGHT - 1);
-}
 void write_max_level(int& max_level)
 {
 	ofstream f("Assets/data/max_level_file.dat", ios::out);
@@ -245,23 +145,8 @@ void Credits_print() {
 	}
 	sleep_sec(2);
 }
-void Reset_game() {
-	reset_values();
-	read_max_level();
-	get_level_info_from_file(level);
-}
-void Settings_menu() {
-	cout << "Final level is: " << END_LEVEL << endl;
-	cout << ((mute) ? "Sound is mute!" : "Sound is not mute!") << endl;
-	if (ask_yn(((mute) ? "Do you want to unmute the sound?\n" : "Do you want to mute the sound?\n"))) {
-		mute = !mute;
-		if (!just_play && ask_yn("Are you sure you want to save current stage?"))
-			user.Save();
-	}
 
-	else
-		;
-}
+
 bool play_sound(LPCWSTR  path) {
 	bool work_good = false;
 	if (!mute) {
@@ -295,24 +180,4 @@ bool ask_yn(string question_with_enter) {
 		}
 	} while (!broken);
 	return result;
-}
-void Register() {
-	bool passed_reg_stage = false;
-	user = User();
-	do {
-		if (ask_yn("Are you a new user?\n")) {
-			if (ask_yn("Would you like to sign up?\n")) {
-				passed_reg_stage = user.Sign_up();
-				just_play = !passed_reg_stage;
-			}
-			else {
-				just_play = true;
-				passed_reg_stage = true;
-			}
-		}
-		else {
-			passed_reg_stage = user.Login();
-			just_play = !passed_reg_stage;
-		}
-	} while (!passed_reg_stage);
 }

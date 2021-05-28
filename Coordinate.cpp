@@ -1,4 +1,6 @@
 #include "Coordinate.h"
+Coordinate::Coordinate() {}
+Coordinate::~Coordinate() {}
 Coordinate::Coordinate(int Xcor, int Ycor) {
 	this->Xcor = Xcor;
 	this->Ycor = Ycor;

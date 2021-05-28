@@ -7,6 +7,7 @@
 #include <Windows.h>//for play_sound
 #include <MMSystem.h>//for play_sound
 #include <algorithm>//for finding the nearest zombie to kill
+using namespace std;
 //CONSTANTS
 #define PLAYER_CHAR 'P'
 #define ZOMBIE_CHAR 'Z'
@@ -35,31 +36,31 @@
 ##       ##     ##  ##   ##   ##  ##     ##    ##        ##     ##        ## ##     ## \n\
 ##    ## ##     ##   ## ##    ##  ##     ##    ##         ##   ##  ##     ##  ##   ##  \n\
 ######   #######     ###    #### ########     #########   #####    #######    #####   "
-using namespace std;
-bool just_play = false, is_exit = false, mute = false;
-int WIDTH = 15, HEIGHT = 15, END_LEVEL = 20;
-int level = 1, health = 3, ammo = 0, charged = 3,
-vaccine = 0, kill = 0, range_gun = 5, credit = 0,
-round_num = 0, magazine_capacity = 3;
 
+bool just_play, is_exit, mute;
+int WIDTH , HEIGHT, END_LEVEL;
+int level , health , ammo , charged,
+vaccine , kill , range_gun , credit,
+round_num , magazine_capacity;
 void sleep_sec(float);
-void Settings_menu();
-void Reset_game();
+//void Settings_menu();
+//void Reset_game();
 void Exit_game();
-void print_screen();
+//void print_screen();
 void print_score_board();
 void Upgrade_item(const int&, int&, const int, string);
 void base_menu();
 void reset_values();
-void get_level_info_from_file(int);
+//void get_level_info_from_file(int);
 void Clear_scr();
 void char_to_lower(char&);
 void read_max_level();
 void write_max_level(int& max_level);
 void Credits_print();
 bool ask_yn(string = "");
-void Register();
+//void Register();
 bool play_sound(LPCWSTR);
 template<typename T1>
 void reset_value(T1&, T1);
+
 #endif

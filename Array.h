@@ -1,7 +1,9 @@
 
 #ifndef _ARRAY_
 #define _ARRAY_
+//#ifndef _UTILITIES_
 #include "Utilities.h"
+//#endif
 template<typename T>
 class Array {
 private:

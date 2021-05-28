@@ -1,7 +1,9 @@
 #pragma once
 #ifndef _ITEM_
 #define _ITEM_
+//#ifndef _COORDINATE_
 #include "Coordinate.h"
+//#endif
 class Item {
 
 private:

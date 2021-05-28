@@ -233,3 +233,41 @@ int User::get_num_save() { return _num_save; }
 
 const int User::max_user_pass_length = 20;
 const int User::min_user_pass_length = 4;
+
+void Register() {
+	bool passed_reg_stage = false;
+	user = User();
+	do {
+		if (ask_yn("Are you a new user?\n")) {
+			if (ask_yn("Would you like to sign up?\n")) {
+				passed_reg_stage = user.Sign_up();
+				just_play = !passed_reg_stage;
+			}
+			else {
+				just_play = true;
+				passed_reg_stage = true;
+			}
+		}
+		else {
+			passed_reg_stage = user.Login();
+			just_play = !passed_reg_stage;
+		}
+	} while (!passed_reg_stage);
+}
+void Settings_menu() {
+	cout << "Final level is: " << END_LEVEL << endl;
+	cout << ((mute) ? "Sound is mute!" : "Sound is not mute!") << endl;
+	if (ask_yn(((mute) ? "Do you want to unmute the sound?\n" : "Do you want to mute the sound?\n"))) {
+		mute = !mute;
+		if (!just_play && ask_yn("Are you sure you want to save current stage?"))
+			user.Save();
+	}
+
+	else
+		;
+}
+void Reset_game() {
+	reset_values();
+	read_max_level();
+	get_level_info_from_file(level);
+}

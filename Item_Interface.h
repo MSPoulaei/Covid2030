@@ -1,8 +1,12 @@
 
 #ifndef _ITEM_INTERFACE_
 #define _ITEM_INTERFACE_
+//#ifndef _ITEM_
 #include "Item.h"
+//#endif
+//#ifndef _ARRAY_
 #include "Array.h"
+//#endif
 
 class Item_Interface {
 public:
@@ -21,5 +25,6 @@ private:
 };
 static Item_Interface Player(PLAYER_CHAR, 0, 0);
 static Item_Interface Door(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
-
+void print_screen();
+void get_level_info_from_file(int);
 #endif

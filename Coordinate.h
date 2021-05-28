@@ -9,8 +9,8 @@ private:
 	int Xcor;
 	int Ycor;
 public:
-	Coordinate() {}
-	~Coordinate() {}
+	Coordinate();
+	~Coordinate();
 	Coordinate(int, int);
 	void move(char, int, int);
 	void goto_cordnate(int, int);

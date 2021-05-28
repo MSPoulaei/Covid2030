@@ -1,7 +1,9 @@
-#pragma once
+
 #ifndef _USER_
 #define _USER_
+//#ifndef _ITEM_INTERFACE_
 #include "Item_Interface.h"
+//#endif
 class User {
 private:
 	string user_name;
@@ -35,7 +37,8 @@ public:
 	void Save();
 	int get_num_save();
 };
-
-
 User user;
+void Register();
+void Settings_menu();
+void Reset_game();
 #endif

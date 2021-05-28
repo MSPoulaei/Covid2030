@@ -1,6 +1,11 @@
 ﻿#include "User.h"
 
 int main() {
+	just_play = false;
+	is_exit = false;
+	mute = false;
+	WIDTH = 15; HEIGHT = 15; END_LEVEL = 20;
+	reset_values();
 	read_max_level();
 	cout <<RED<< LOGO <<RESET<< endl;
 	cout << "Welcome to Covid 2030 game!\n";
