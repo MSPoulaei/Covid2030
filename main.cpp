@@ -54,6 +54,7 @@ int main() {
 				bool game_is_on = true, won = false, load_triggered = false;
 				if (main_menu != Load)
 					round_num = 0;
+				play_sound(L"Assets/sound/Play.wav");
 				while (game_is_on) {
 
 					print_screen();
