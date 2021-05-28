@@ -162,7 +162,7 @@ bool play_sound(LPCWSTR  path) {
 	return work_good;
 }
 bool ask_yn(string question_with_enter) {
-	cout << question_with_enter;
+	cout << question_with_enter << "type y for yes or n for no:" << endl;
 	char yn;
 	bool broken = false, result;
 	do {
