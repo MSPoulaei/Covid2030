@@ -66,7 +66,7 @@ int main() {
 					enum keys {
 						MV_UP = 'w', MV_DOWN = 's', MV_RIGHT = 'd', MV_LEFT = 'a',
 						SH_UP = 't', SH_DOWN = 'g', SH_RIGHT = 'h', SH_LEFT = 'f',
-						RELOAD_KEY = 'r', EXIT_KEY = 'e', UPGRADE_KEY = 'u', MENU_KEY = 'm'
+						RELOAD_KEY = 'r', EXIT_KEY = 'e', UPGRADE_KEY = 'u', MENU_KEY = 'm',CHEAT='`'
 					};
 
 					switch (key) {
@@ -289,6 +289,15 @@ int main() {
 					}
 					case UPGRADE_KEY:
 						base_menu();
+						break;
+					case CHEAT:
+						cout << "Cheat Activated!" << endl;
+						health = 10;
+						ammo = 99;
+						range_gun = 99;
+						credit = 999;
+						magazine_capacity = 10;
+						sleep_sec(2);
 						break;
 					case MENU_KEY: {
 						enum game_menu_items { Return_to_game = 48, New_Game_inner_menu, Save, Load_inner_menu, Settings, Exit };
