@@ -20,6 +20,17 @@ Array<Item_Interface> Item_Interface::Vaccines;
 Array<Item_Interface> Item_Interface::Ammunition;
  Item_Interface Player(PLAYER_CHAR, 0, 0);
  Item_Interface Door(DOOR_CHAR, WIDTH - 1, HEIGHT - 1);
+ string itos(int num) {
+	 string res = "", revert;
+	 while (num > 0) {
+		 revert += char(num % 10 + 48);
+		 num /= 10;
+	 }
+	 for (int i = revert.size() - 1; i >= 0; i--) {
+		 res += revert[i];
+	 }
+	 return res;
+ }
 void get_level_info_from_file(int level)
 {
 	//clear last items
@@ -27,7 +38,7 @@ void get_level_info_from_file(int level)
 	Item_Interface::Vaccines.clear();
 	Item_Interface::Ammunition.clear();
 
-	string p1 = "Assets/levels/file_level_"; p1 += char(level + 48); string address = p1 + ".txt";
+	string p1 = "Assets/levels/file_level_"; p1 += itos(level); /*char(level + 48);*/ string address = p1 + ".txt";
 	ifstream infile(address, ios::in);
 	if (!infile) {
 		cerr << "file not found!" << endl;
