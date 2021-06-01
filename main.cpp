@@ -537,6 +537,8 @@ int main() {
 			}
 			break;
 		default:
+			cout << "Please just enter the numbers in the menu:" << endl;
+			sleep_sec(1.5);
 			break;
 		}
 	}
