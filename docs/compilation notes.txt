@@ -1,0 +1,4 @@
+linker: -lwinmm
+compiler: visual studio for visual cpp version (Visual Studio 2019)
+
+folder Assets must be in the directory of cpp and header files while running the game
